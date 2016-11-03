@@ -9,7 +9,8 @@ def easydb_server_start(easydb_context):
     if url_prefix is None:
         url_prefix = easydb_context.get_config('system.plugins.url_prefix')
     repository_base_url = '{}/api/plugin/base/oai/oai'.format(url_prefix)
-    repository = oai_modules.repository.OAIRepository(repository_base_url)
+    repository_name = 'Easydb'
+    repository = oai_modules.repository.Repository(repository_base_url, repository_name, '')
     easydb_context.register_callback('api', { 'name': 'oai', 'callback': 'oai'})
 
 @oai_modules.util.handle_exceptions

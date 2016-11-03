@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 import xml.dom.minidom
 import datetime
 
-class OAIResponse(object):
+class Response(object):
     def __init__(self, request):
         self.request = request
         self.error_code = None
@@ -20,13 +20,39 @@ class OAIResponse(object):
                 error.text = self.error_message
         else:
             request.attrib = self.request.parameters
+            verb = ET.SubElement(oaipmh, self.request.verb)
+            for item in self.get_response_items():
+                se = ET.SubElement(verb, item.name)
+                se.text = item.text
         return xml.dom.minidom.parseString(ET.tostring(oaipmh, 'UTF-8')).toprettyxml(indent='\t', encoding='UTF-8')
+    def get_response_items(self):
+        return []
 
-class OAIErrorResponse(OAIResponse):
+class ErrorResponse(Response):
     def __init__(self, request, error_code, error_message=None):
-        super(OAIErrorResponse, self).__init__(request)
+        super(ErrorResponse, self).__init__(request)
         self.error_code = error_code
         self.error_message = error_message
+
+class IdentifyResponse(Response):
+    def __init__(self, request):
+        super(IdentifyResponse, self).__init__(request)
+    def get_response_items(self):
+        return [
+            ResponseItem('repositoryName', self.request.repository.name),
+            ResponseItem('base_url', self.request.repository.base_url),
+            ResponseItem('protocolVersion', '2.0'),
+            ResponseItem('earliestDatestamp', ''),
+            ResponseItem('deletedRecord', 'no'),
+            ResponseItem('granularity', 'YYYY-MM-DDThh:mm:ssZ'),
+            ResponseItem('adminEmail', self.request.repository.admin_email)
+        ]
+
+class ResponseItem(object):
+    def __init__(self, name, text):
+        self.name = name
+        self.text = text
+
 
 oaipmh_attributes = {
     'xmlns': 'http://www.openarchives.org/OAI/2.0/',
