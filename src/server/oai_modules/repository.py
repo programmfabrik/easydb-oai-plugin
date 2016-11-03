@@ -32,7 +32,7 @@ class Repository(object):
                 }
             ]
         }
-        response = self.easydb_context.search('user', 'deep_link', query)
+        response = self.easydb_context.search('user', 'oai_pmh', query)
         for obj in response['objects']:
             spec = ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), obj['_path'])))
             # FIXME: language
