@@ -54,7 +54,6 @@ class ListSets(Response):
     def get_response_items(self):
         items = []
         for s in self.sets:
-            print ('SET')
             item = ResponseItem('set')
             item.subitems = [
                 ResponseItem('setName', s.name),

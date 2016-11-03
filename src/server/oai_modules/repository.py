@@ -17,29 +17,38 @@ class Repository(object):
             request = oai_modules.request.Request(self)
             return oai_modules.response.Error(request, e.error_code, e.error_message)
     def get_sets(self):
-        # FIXME: sort by hierarchy for flow control
-        sets = [Set('Pools', 'pool'), Set('Collections', 'collection')]
-        query = {
-            'type': 'pool',
-            'generate_rights': False
-        }
-        response = self.easydb_context.search('user', 'deep_link', query)
-        for pool in response['objects']:
-            spec = ':'.join(['pool'] + list(map(lambda element: str(element['pool']['_id']), pool['_path'])))
-            # FIXME: language
-            name = pool['_path'][-1]['pool']['name']['de-DE']
-            sets.append(Set(name, spec))
-        query = {
-            'type': 'collection',
-            'generate_rights': False
-        }
-        response = self.easydb_context.search('user', 'deep_link', query)
-        for collection in response['objects']:
-            spec = ':'.join(['collection'] + list(map(lambda element: str(element['collection']['_id']), collection['_path'])))
-            # FIXME: language
-            name = collection['_path'][-1]['collection']['displayname']['de-DE']
-            sets.append(Set(name, spec))
+        sets = []
+        self.extend_sets(sets, 'pool')
+        self.extend_sets(sets, 'collection')
         return sets
+    def extend_sets(self, sets, base_type):
+        sets.append(Set(set_names[base_type]['top'], base_type))
+        query = {
+            'type': base_type,
+            'generate_rights': False,
+            'sort': [
+                {
+                    'field': '{}._id'.format(base_type)
+                }
+            ]
+        }
+        response = self.easydb_context.search('user', 'deep_link', query)
+        for obj in response['objects']:
+            spec = ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), obj['_path'])))
+            # FIXME: language
+            name = obj['_path'][-1][base_type][set_names[base_type]['objkey']]['de-DE']
+            sets.append(Set(name, spec))
+
+set_names = {
+    'pool': {
+        'top': 'Pools',
+        'objkey': 'name'
+    },
+    'collection': {
+        'top': 'Collections',
+        'objkey': 'displayname'
+    }
+}
 
 class Set(object):
     def __init__(self, name, spec):
