@@ -37,6 +37,15 @@ def http_text_response(text, status_code=200):
         }
     }
 
+def http_xml_response(text, status_code=200):
+    return {
+        "status_code": status_code,
+        "body": text,
+        "headers": {
+            "Content-Type": "text/xml; charset=utf-8"
+        }
+    }
+
 def parse_query_string(query_string):
     qs_params = {}
     if len(query_string) > 0:

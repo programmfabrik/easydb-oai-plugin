@@ -22,21 +22,20 @@ class Response(object):
             request.attrib = self.request.parameters
             verb = ET.SubElement(oaipmh, self.request.verb)
             for item in self.get_response_items():
-                se = ET.SubElement(verb, item.name)
-                se.text = item.text
+                item.add_sub_element(verb)
         return xml.dom.minidom.parseString(ET.tostring(oaipmh, 'UTF-8')).toprettyxml(indent='\t', encoding='UTF-8')
     def get_response_items(self):
         return []
 
-class ErrorResponse(Response):
+class Error(Response):
     def __init__(self, request, error_code, error_message=None):
-        super(ErrorResponse, self).__init__(request)
+        super(Error, self).__init__(request)
         self.error_code = error_code
         self.error_message = error_message
 
-class IdentifyResponse(Response):
+class Identify(Response):
     def __init__(self, request):
-        super(IdentifyResponse, self).__init__(request)
+        super(Identify, self).__init__(request)
     def get_response_items(self):
         return [
             ResponseItem('repositoryName', self.request.repository.name),
@@ -48,11 +47,33 @@ class IdentifyResponse(Response):
             ResponseItem('adminEmail', self.request.repository.admin_email)
         ]
 
+class ListSets(Response):
+    def __init__(self, request, sets):
+        super(ListSets, self).__init__(request)
+        self.sets = sets
+    def get_response_items(self):
+        items = []
+        for s in self.sets:
+            print ('SET')
+            item = ResponseItem('set')
+            item.subitems = [
+                ResponseItem('setName', s.name),
+                ResponseItem('setSpec', s.spec)
+            ]
+            items.append(item)
+        return items
+
 class ResponseItem(object):
-    def __init__(self, name, text):
+    def __init__(self, name, text=None):
         self.name = name
         self.text = text
-
+        self.subitems = []
+    def add_sub_element(self, element):
+        se = ET.SubElement(element, self.name)
+        if self.text is not None:
+            se.text = self.text
+        for subitem in self.subitems:
+            subitem.add_sub_element(se)
 
 oaipmh_attributes = {
     'xmlns': 'http://www.openarchives.org/OAI/2.0/',

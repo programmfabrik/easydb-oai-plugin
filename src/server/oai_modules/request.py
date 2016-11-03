@@ -32,8 +32,16 @@ class Identify(Request):
     def __init__(self, repository, parameters={}):
         super(Identify, self).__init__(repository, 'Identify', parameters)
     def process(self):
-        return oai_modules.response.IdentifyResponse(self)
+        return oai_modules.response.Identify(self)
+
+class ListSets(Request):
+    def __init__(self, repository, parameters={}):
+        super(ListSets, self).__init__(repository, 'ListSets', parameters)
+    def process(self):
+        sets = self.repository.get_sets()
+        return oai_modules.response.ListSets(self, sets)
 
 oai_requests = {
-    'Identify': Identify
+    'Identify': Identify,
+    'ListSets': ListSets
 }
