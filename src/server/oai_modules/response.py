@@ -39,7 +39,7 @@ class Identify(Response):
     def get_response_items(self):
         return [
             ResponseItem('repositoryName', self.request.repository.name),
-            ResponseItem('base_url', self.request.repository.base_url),
+            ResponseItem('baseURL', self.request.repository.base_url),
             ResponseItem('protocolVersion', '2.0'),
             ResponseItem('earliestDatestamp', ''),
             ResponseItem('deletedRecord', 'no'),
@@ -84,13 +84,19 @@ class Records(Response):
     def record_to_response_item(self, record):
         header = ResponseItem('header')
         header.subitems = [
-            ResponseItem('identifier', record.identifier)
+            ResponseItem('identifier', record.identifier),
+            # FIXME
+            ResponseItem('datestamp', '2016-01-01T00:00:00Z')
         ]
         header.subitems += [ResponseItem('setSpec', set_spec) for set_spec in record.set_specs]
         if self.only_header:
             return header
+        metadata = ResponseItem('metadata')
+        # FIXME
+        foo = ResponseItem('foo', 'bar')
+        metadata.subitems = [foo]
         record_item = ResponseItem('record')
-        record_item.subitems = [header]
+        record_item.subitems = [header, metadata]
         return record_item
 
 class ResponseItem(object):
