@@ -9,6 +9,8 @@ def handle_exceptions(func):
     def func_wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
+        except InternalError as e:
+            return http_text_response(e.message, 500)
         except EasydbException as e:
             raise e
         except EasydbError as e:
@@ -30,19 +32,19 @@ def handle_exceptions(func):
 
 def http_text_response(text, status_code=200):
     return {
-        "status_code": status_code,
-        "body": text,
-        "headers": {
-            "Content-Type": "text/plain; charset=utf-8"
+        'status_code': status_code,
+        'body': text + '\n',
+        'headers': {
+            'Content-Type': 'text/plain; charset=utf-8'
         }
     }
 
-def http_xml_response(text, status_code=200):
+def http_xml_response(text):
     return {
-        "status_code": status_code,
-        "body": text,
-        "headers": {
-            "Content-Type": "text/xml; charset=utf-8"
+        'status_code': 200,
+        'body': text,
+        'headers': {
+            'Content-Type': 'text/xml; charset=utf-8'
         }
     }
 
@@ -58,3 +60,7 @@ def parse_query_string(query_string):
                 value = None
             qs_params[key] = value
     return qs_params
+
+class InternalError(Exception):
+    def __init__(self, message):
+        self.message = message

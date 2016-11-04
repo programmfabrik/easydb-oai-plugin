@@ -74,17 +74,24 @@ class ListMetadataFormats(Response):
         ]
         return [metadataFormat]
 
-class GetRecord(Response):
-    def __init__(self, request, record):
-        super(GetRecord, self).__init__(request)
-        self.record = record
+class Records(Response):
+    def __init__(self, request, records, only_header=False):
+        super(Records, self).__init__(request)
+        self.records = records
+        self.only_header = only_header
     def get_response_items(self):
+        return [self.record_to_response_item(record) for record in self.records]
+    def record_to_response_item(self, record):
         header = ResponseItem('header')
         header.subitems = [
-            ResponseItem('identifier', self.record.identifier)
+            ResponseItem('identifier', record.identifier)
         ]
-        header.subitems += [ResponseItem('setSpec', set_spec) for set_spec in self.record.set_specs]
-        return [header]
+        header.subitems += [ResponseItem('setSpec', set_spec) for set_spec in record.set_specs]
+        if self.only_header:
+            return header
+        record_item = ResponseItem('record')
+        record_item.subitems = [header]
+        return record_item
 
 class ResponseItem(object):
     def __init__(self, name, text=None):

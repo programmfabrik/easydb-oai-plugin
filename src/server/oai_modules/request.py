@@ -22,9 +22,12 @@ class Request(object):
         if verb not in oai_requests:
             raise ParseError('badVerb', 'wrong verb')
         return oai_requests[verb](repository, parameters)
-    def _get_parameter(self, name):
+    def _get_parameter(self, name, required=True):
         if name not in self.parameters:
-            raise ParseError('badArgument', '{} parameter is missing'.format(name))
+            if required:
+                raise ParseError('badArgument', '{} parameter is missing'.format(name))
+            else:
+                return None
         return self.parameters[name]
     def _parse_identifier(self, identifier):
         identifier_parts = identifier.split(':')
@@ -37,6 +40,16 @@ class Request(object):
         if len(identifier_parts[2]) == 0:
             raise ParseError('idDoesNotExist', 'wrong identifier')
         return identifier_parts[2]
+    def _parse_set_filter(self, set_spec):
+        set_parts = set_spec.split(':')
+        if len(set_parts) == 1:
+            raise ParseError('badArgument', 'wrong set')
+        if set_parts[0] not in ('pool', 'collection'):
+            raise ParseError('badArgument', 'wrong set')
+        try:
+            return (set_parts[0], int(set_parts[-1]))
+        except ValueError:
+            raise ParseError('badArgument', 'wrong set')
 
 class Identify(Request):
     def __init__(self, repository, parameters={}):
@@ -65,8 +78,32 @@ class GetRecord(Request):
     def process(self):
         record = self.repository.get_record(self.uuid)
         if record is None:
-            raise ParseError('idDoesNotExist')
-        return oai_modules.response.GetRecord(self, record)
+            return oai_modules.response.Error(self, 'idDoesNotExist')
+        return oai_modules.response.Records(self, [record])
+
+class ListRecords(Request):
+    def __init__(self, repository, parameters={}):
+        super(ListRecords, self).__init__(repository, 'ListRecords', parameters)
+        set_param = self._get_parameter('set', required=False)
+        self.set_filter = self._parse_set_filter(set_param) if set_param is not None else None
+        self.metadataPrefix = self._get_parameter('metadataPrefix')
+    def process(self):
+        records = self.repository.get_records(self.set_filter)
+        if len(records) == 0:
+            return oai_modules.response.Error(self, 'noRecordsMatch')
+        return oai_modules.response.Records(self, records)
+
+class ListIdentifiers(Request):
+    def __init__(self, repository, parameters={}):
+        super(ListIdentifiers, self).__init__(repository, 'ListIdentifiers', parameters)
+        set_param = self._get_parameter('set', required=False)
+        self.set_filter = self._parse_set_filter(set_param) if set_param is not None else None
+        self.metadataPrefix = self._get_parameter('metadataPrefix')
+    def process(self):
+        records = self.repository.get_records(self.set_filter)
+        if len(records) == 0:
+            return oai_modules.response.Error(self, 'noIdentifiersMatch')
+        return oai_modules.response.Records(self, records, only_header=True)
 
 class ParseError(Exception):
     def __init__(self, error_code, error_message=None):
@@ -77,5 +114,7 @@ oai_requests = {
     'Identify': Identify,
     'ListSets': ListSets,
     'ListMetadataFormats': ListMetadataFormats,
-    'GetRecord': GetRecord
+    'GetRecord': GetRecord,
+    'ListRecords': ListRecords,
+    'ListIdentifiers': ListIdentifiers
 }
