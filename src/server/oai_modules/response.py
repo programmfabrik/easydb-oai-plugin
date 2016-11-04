@@ -62,6 +62,30 @@ class ListSets(Response):
             items.append(item)
         return items
 
+class ListMetadataFormats(Response):
+    def __init__(self, request):
+        super(ListMetadataFormats, self).__init__(request)
+    def get_response_items(self):
+        metadataFormat = ResponseItem('metadataFormat')
+        metadataFormat.subitems = [
+            ResponseItem('metadataPrefix', 'oai_dc'),
+            ResponseItem('schema', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd'),
+            ResponseItem('metadataNamespace', 'http://www.openarchives.org/OAI/2.0/oai_dc/')
+        ]
+        return [metadataFormat]
+
+class GetRecord(Response):
+    def __init__(self, request, record):
+        super(GetRecord, self).__init__(request)
+        self.record = record
+    def get_response_items(self):
+        header = ResponseItem('header')
+        header.subitems = [
+            ResponseItem('identifier', self.record.identifier)
+        ]
+        header.subitems += [ResponseItem('setSpec', set_spec) for set_spec in self.record.set_specs]
+        return [header]
+
 class ResponseItem(object):
     def __init__(self, name, text=None):
         self.name = name

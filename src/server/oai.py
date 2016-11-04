@@ -15,7 +15,13 @@ def easydb_server_start(easydb_context):
 def oai(easydb_context, parameters):
     global repository_base_url
     repository_name = 'Easydb'
-    repository = oai_modules.repository.Repository(easydb_context, repository_base_url, repository_name, '')
+    repository_namespace_identifier = 'easydb.de'
+    repository = oai_modules.repository.Repository(
+        easydb_context,
+        repository_base_url,
+        repository_name,
+        repository_namespace_identifier,
+        '')
     if (parameters['method'] not in ['GET', 'POST']):
         return oai_modules.util.http_text_response('Method Not Allowed: only GET or POST requests are allowed\n', 405)
     qs_parameters = oai_modules.util.parse_query_string(parameters['query_string'])
