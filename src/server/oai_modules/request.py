@@ -55,7 +55,8 @@ class Identify(Request):
     def __init__(self, repository, parameters={}):
         super(Identify, self).__init__(repository, 'Identify', parameters)
     def process(self):
-        return oai_modules.response.Identify(self)
+        earliest_datestamp = self.repository.get_earliest_datestamp()
+        return oai_modules.response.Identify(self, earliest_datestamp)
 
 class ListSets(Request):
     def __init__(self, repository, parameters={}):
@@ -68,7 +69,7 @@ class ListMetadataFormats(Request):
     def __init__(self, repository, parameters={}):
         super(ListMetadataFormats, self).__init__(repository, 'ListMetadataFormats', parameters)
     def process(self):
-        return oai_modules.response.ListMetadataFormats(self)
+        return oai_modules.response.ListMetadataFormats(self, self.repository.get_metadata_formats())
 
 class GetRecord(Request):
     def __init__(self, repository, parameters={}):

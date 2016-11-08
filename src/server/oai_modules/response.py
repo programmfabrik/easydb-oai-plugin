@@ -34,14 +34,15 @@ class Error(Response):
         self.error_message = error_message
 
 class Identify(Response):
-    def __init__(self, request):
+    def __init__(self, request, earliest_datestamp):
         super(Identify, self).__init__(request)
+        self.earliest_datestamp = earliest_datestamp
     def get_response_items(self):
         return [
             ResponseItem('repositoryName', self.request.repository.name),
             ResponseItem('baseURL', self.request.repository.base_url),
             ResponseItem('protocolVersion', '2.0'),
-            ResponseItem('earliestDatestamp', ''),
+            ResponseItem('earliestDatestamp', self.earliest_datestamp),
             ResponseItem('deletedRecord', 'no'),
             ResponseItem('granularity', 'YYYY-MM-DDThh:mm:ssZ'),
             ResponseItem('adminEmail', self.request.repository.admin_email)
@@ -63,16 +64,19 @@ class ListSets(Response):
         return items
 
 class ListMetadataFormats(Response):
-    def __init__(self, request):
+    def __init__(self, request, formats):
         super(ListMetadataFormats, self).__init__(request)
+        self.formats = formats
     def get_response_items(self):
+        return [self.format_to_response_item(f) for f in self.formats]
+    def format_to_response_item(self, f):
         metadataFormat = ResponseItem('metadataFormat')
         metadataFormat.subitems = [
-            ResponseItem('metadataPrefix', 'oai_dc'),
-            ResponseItem('schema', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd'),
-            ResponseItem('metadataNamespace', 'http://www.openarchives.org/OAI/2.0/oai_dc/')
+            ResponseItem('metadataPrefix', f.prefix),
+            ResponseItem('schema', f.schema),
+            ResponseItem('metadataNamespace', f.namespace)
         ]
-        return [metadataFormat]
+        return metadataFormat
 
 class Records(Response):
     def __init__(self, request, records, only_header=False):
