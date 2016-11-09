@@ -48,28 +48,13 @@ class Identify(Response):
             ResponseItem('adminEmail', self.request.repository.admin_email)
         ]
 
-class ListSets(Response):
-    def __init__(self, request, sets):
-        super(ListSets, self).__init__(request)
-        self.sets = sets
-    def get_response_items(self):
-        items = []
-        for s in self.sets:
-            item = ResponseItem('set')
-            item.subitems = [
-                ResponseItem('setName', s.name),
-                ResponseItem('setSpec', s.spec)
-            ]
-            items.append(item)
-        return items
-
 class ListMetadataFormats(Response):
     def __init__(self, request, formats):
         super(ListMetadataFormats, self).__init__(request)
         self.formats = formats
     def get_response_items(self):
-        return [self.format_to_response_item(f) for f in self.formats]
-    def format_to_response_item(self, f):
+        return [self._format_to_response_item(f) for f in self.formats]
+    def _format_to_response_item(self, f):
         metadataFormat = ResponseItem('metadataFormat')
         metadataFormat.subitems = [
             ResponseItem('metadataPrefix', f.prefix),
@@ -77,6 +62,24 @@ class ListMetadataFormats(Response):
             ResponseItem('metadataNamespace', f.namespace)
         ]
         return metadataFormat
+
+class ListSets(Response):
+    def __init__(self, request, sets, scroll_id):
+        super(ListSets, self).__init__(request)
+        self.sets = sets
+        self.scroll_id = scroll_id
+    def get_response_items(self):
+        items = [self._set_to_response_item(s) for s in self.sets]
+        if self.scroll_id is not None:
+            items.append(ResponseItem('resumptionToken', self.scroll_id))
+        return items
+    def _set_to_response_item(self, s):
+        item = ResponseItem('set')
+        item.subitems = [
+            ResponseItem('setName', s.name),
+            ResponseItem('setSpec', s.spec)
+        ]
+        return item
 
 class Records(Response):
     def __init__(self, request, records, only_header=False):

@@ -58,18 +58,22 @@ class Identify(Request):
         earliest_datestamp = self.repository.get_earliest_datestamp()
         return oai_modules.response.Identify(self, earliest_datestamp)
 
-class ListSets(Request):
-    def __init__(self, repository, parameters={}):
-        super(ListSets, self).__init__(repository, 'ListSets', parameters)
-    def process(self):
-        sets = self.repository.get_sets()
-        return oai_modules.response.ListSets(self, sets)
-
 class ListMetadataFormats(Request):
     def __init__(self, repository, parameters={}):
         super(ListMetadataFormats, self).__init__(repository, 'ListMetadataFormats', parameters)
     def process(self):
         return oai_modules.response.ListMetadataFormats(self, self.repository.get_metadata_formats())
+
+class ListSets(Request):
+    def __init__(self, repository, parameters={}):
+        super(ListSets, self).__init__(repository, 'ListSets', parameters)
+        self.resumption_token = self._get_parameter('resumptionToken', False)
+    def process(self):
+        result = self.repository.get_sets(self.resumption_token)
+        if result is None:
+            return oai_modules.response.Error(self, 'badResumptionToken')
+        sets, resumption_token = result
+        return oai_modules.response.ListSets(self, sets, resumption_token)
 
 class GetRecord(Request):
     def __init__(self, repository, parameters={}):
