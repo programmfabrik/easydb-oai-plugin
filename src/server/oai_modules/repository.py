@@ -129,12 +129,12 @@ class Repository(object):
             ]
         }
         response = self.easydb_context.search('user', 'oai_pmh', query)
+        language = response['language']
         has_more = response["count"] > len(response['objects'])
         sets = []
         for obj in response['objects']:
             spec = self._get_spec(obj['_path'], base_type)
-            # FIXME: language
-            name = obj['_path'][-1][base_type][set_names[base_type]['objkey']]['de-DE']
+            name = obj['_path'][-1][base_type][set_names[base_type]['objkey']][language]
             sets.append(Set(name, spec))
         return (sets, response['count'])
     def _get_spec(self, path_js, base_type):
