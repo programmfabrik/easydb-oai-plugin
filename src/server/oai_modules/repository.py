@@ -143,10 +143,10 @@ class Repository(object):
         try:
             uuid = context.get_json_value(object_js, '_uuid', True)
             record = Record(self, uuid)
-            objecttype = context.get_json_value(object_js, '_objecttype', True)
-            pool_path = context.get_json_value(object_js, '{}._pool._path'.format(objecttype))
-            if pool_path is not None:
-                record.set_specs.append(self._get_spec(pool_path, 'pool'))
+            sets = context.get_json_value(object_js, '_sets')
+            if sets is not None:
+                record.set_specs = sets
+            record.last_modified = context.get_json_value(object_js, '_last_modified')
             return record
         except context.EasydbException as e:
             raise oai_modules.util.InternalError(e.message)
@@ -178,6 +178,7 @@ class Record(object):
         self.uuid = uuid
         self.identifier = 'oai:{}:{}'.format(repository.namespace_identifier, uuid)
         self.set_specs = []
+        self.last_modified = None
 
 sql_get_earliest_datestamp_from_config = """
 select value_text as earliest_datestamp

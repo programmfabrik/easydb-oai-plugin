@@ -92,8 +92,7 @@ class Records(Response):
         header = ResponseItem('header')
         header.subitems = [
             ResponseItem('identifier', record.identifier),
-            # FIXME
-            ResponseItem('datestamp', '2016-01-01T00:00:00Z')
+            ResponseItem('datestamp', record.last_modified)
         ]
         header.subitems += [ResponseItem('setSpec', set_spec) for set_spec in record.set_specs]
         if self.only_header:
