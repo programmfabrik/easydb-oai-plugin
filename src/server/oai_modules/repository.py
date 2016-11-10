@@ -67,6 +67,81 @@ class Repository(object):
             rt_set = None
             offset = 0
         return (sets, new_resumption_token)
+    def get_records(self, metadata_prefix, only_headers, resumption_token, range_from, range_until, set_filter, limit=100):
+        search_format = 'short' if only_headers else 'long'
+        if resumption_token is not None:
+            parts = resumption_token.split('*')
+            if len(parts) != 6:
+                return None
+            if len(parts[0]) > 0:
+                range_from = parts[0]
+            if len(parts[1]) > 0:
+                range_until = parts[1]
+            try:
+                if len(parts[2]) > 0 and len(parts[3]) > 0:
+                    fid = parts[3]
+                    if parts[2] != 'objecttype':
+                        fid = int(fid)
+                    set_filter = (parts[2], fid)
+                offset = int(parts[4])
+            except ValueError:
+                return None
+            metadata_prefix = parts[5]
+        else:
+            offset = 0
+        search_elements = []
+        objecttypes = []
+        if set_filter:
+            filter_type, filter_id = set_filter
+            if filter_type == 'pool':
+                search_elements.append({'type': 'in', 'objecttype': '_pool', 'in': [filter_id]})
+            elif filter_type == 'collection':
+                search_elements.append({'type': 'in', 'fields': ['_collections._id'], 'in': [filter_id]})
+            else:
+                objecttypes.append(filter_id)
+        if range_from is not None or range_until is not None:
+            search_element = {'type': 'range', 'field': '_last_modified'}
+            if range_from is not None:
+                search_element['from'] = range_from
+            if range_until is not None:
+                search_element['to'] = range_until
+            search_elements.append(search_element)
+        query = {
+            'type': 'object',
+            'generate_rights': False,
+            'objecttypes': objecttypes,
+            'offset': offset,
+            'limit': limit,
+            'sort': [
+                {
+                    'field': '_system_object_id'
+                }
+            ],
+            'format': search_format,
+            'search': search_elements
+        }
+        response = self.easydb_context.search('user', 'oai_pmh', query)
+        records = [self._parse_record(object_js) for object_js in response['objects']]
+        if response['count'] > offset + limit:
+            token_parts =[]
+            if range_from is None:
+                token_parts.append('')
+            else:
+                token_parts.append(range_from)
+            if range_until is None:
+                token_parts.append('')
+            else:
+                token_parts.append(range_until)
+            if set_filter is None:
+                token_parts.extend(['', ''])
+            else:
+                token_parts.extend([set_filter[0], str(set_filter[1])])
+            token_parts.append(str(offset + limit))
+            token_parts.append(metadata_prefix)
+            new_resumption_token = '*'.join(token_parts)
+        else:
+            new_resumption_token = None
+        return (records, new_resumption_token)
     def get_record(self, uuid):
         query = {
             'type': 'object',
@@ -84,22 +159,6 @@ class Repository(object):
         if (len(response['objects']) == 0):
             return None
         return self._parse_record(response['objects'][0])
-    def get_records(self, set_filter):
-        search_elements = []
-        if set_filter:
-            filter_type, filter_id = set_filter
-            if filter_type == 'pool':
-                search_elements.append({'type': 'in', 'objecttype': '_pool', 'in': [filter_id]})
-            else:
-                search_elements.append({'type': 'in', 'fields': ['_collections._id'], 'in': [filter_id]})
-        query = {
-            'type': 'object',
-            'generate_rights': False,
-            'format': 'standard',
-            'search': search_elements
-        }
-        response = self.easydb_context.search('user', 'oai_pmh', query)
-        return [self._parse_record(object_js) for object_js in response['objects']]
     def _extend_sets(self, all_sets, base_type, offset, limit):
         if base_type == 'objecttype':
             sets, total_count = self._get_objecttypes(offset, limit)
@@ -147,6 +206,8 @@ class Repository(object):
             if sets is not None:
                 record.set_specs = sets
             record.last_modified = context.get_json_value(object_js, '_last_modified')
+            if record.last_modified is None:
+                record.last_modified = self.get_earliest_datestamp()
             return record
         except context.EasydbException as e:
             raise oai_modules.util.InternalError(e.message)

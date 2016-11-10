@@ -44,10 +44,14 @@ class Request(object):
         set_parts = set_spec.split(':')
         if len(set_parts) == 1:
             raise ParseError('badArgument', 'wrong set')
-        if set_parts[0] not in ('pool', 'collection'):
+        filter_type = set_parts[0]
+        filter_id = set_parts[-1]
+        if filter_type not in ('pool', 'collection', 'objecttype'):
             raise ParseError('badArgument', 'wrong set')
         try:
-            return (set_parts[0], int(set_parts[-1]))
+            if filter_type != 'objecttype':
+                filter_id = int(filter_id)
+            return (filter_type, filter_id)
         except ValueError:
             raise ParseError('badArgument', 'wrong set')
 
@@ -75,6 +79,44 @@ class ListSets(Request):
         sets, resumption_token = result
         return oai_modules.response.ListSets(self, sets, resumption_token)
 
+class ListIdentifiers(Request):
+    def __init__(self, repository, parameters={}):
+        super(ListIdentifiers, self).__init__(repository, 'ListIdentifiers', parameters)
+        set_param = self._get_parameter('set', required=False)
+        self.set_filter = self._parse_set_filter(set_param) if set_param is not None else None
+        self.resumption_token = self._get_parameter('resumptionToken', False)
+        self.metadataPrefix = self._get_parameter('metadataPrefix', self.resumption_token is None)
+        self.from_filter = self._get_parameter('from', False)
+        self.until_filter = self._get_parameter('until', False)
+    def process(self):
+        result = self.repository.get_records(self.metadataPrefix, True, self.resumption_token, self.from_filter, self.until_filter, self.set_filter)
+        if result is None:
+            return oai_modules.response.Error(self, 'badResumptionToken')
+        records, new_resumption_token = result
+        if len(records) == 0:
+            return oai_modules.response.Error(self, 'noIdentifiersMatch')
+        return oai_modules.response.Records(self, records, new_resumption_token, only_header=True)
+
+class ListRecords(Request):
+    def __init__(self, repository, parameters={}):
+        super(ListRecords, self).__init__(repository, 'ListRecords', parameters)
+        set_param = self._get_parameter('set', required=False)
+        self.set_filter = self._parse_set_filter(set_param) if set_param is not None else None
+        self.resumption_token = self._get_parameter('resumptionToken', False)
+        self.metadataPrefix = self._get_parameter('metadataPrefix')
+        self.from_filter = self._get_parameter('from', False)
+        self.until_filter = self._get_parameter('until', False)
+    def process(self):
+        result = self.repository.get_records(self.metadataPrefix, False, self.resumption_token, self.from_filter, self.until_filter, self.set_filter)
+        if result is None:
+            return oai_modules.response.Error(self, 'badResumptionToken')
+        records, new_resumption_token = result
+        if records is None:
+            return oai_modules.response.Error(self, 'badResumptionToken')
+        if len(records) == 0:
+            return oai_modules.response.Error(self, 'noIdentifiersMatch')
+        return oai_modules.response.Records(self, records, new_resumption_token, only_header=False)
+
 class GetRecord(Request):
     def __init__(self, repository, parameters={}):
         super(GetRecord, self).__init__(repository, 'GetRecord', parameters)
@@ -85,30 +127,6 @@ class GetRecord(Request):
         if record is None:
             return oai_modules.response.Error(self, 'idDoesNotExist')
         return oai_modules.response.Records(self, [record])
-
-class ListRecords(Request):
-    def __init__(self, repository, parameters={}):
-        super(ListRecords, self).__init__(repository, 'ListRecords', parameters)
-        set_param = self._get_parameter('set', required=False)
-        self.set_filter = self._parse_set_filter(set_param) if set_param is not None else None
-        self.metadataPrefix = self._get_parameter('metadataPrefix')
-    def process(self):
-        records = self.repository.get_records(self.set_filter)
-        if len(records) == 0:
-            return oai_modules.response.Error(self, 'noRecordsMatch')
-        return oai_modules.response.Records(self, records)
-
-class ListIdentifiers(Request):
-    def __init__(self, repository, parameters={}):
-        super(ListIdentifiers, self).__init__(repository, 'ListIdentifiers', parameters)
-        set_param = self._get_parameter('set', required=False)
-        self.set_filter = self._parse_set_filter(set_param) if set_param is not None else None
-        self.metadataPrefix = self._get_parameter('metadataPrefix')
-    def process(self):
-        records = self.repository.get_records(self.set_filter)
-        if len(records) == 0:
-            return oai_modules.response.Error(self, 'noIdentifiersMatch')
-        return oai_modules.response.Records(self, records, only_header=True)
 
 class ParseError(Exception):
     def __init__(self, error_code, error_message=None):

@@ -64,14 +64,14 @@ class ListMetadataFormats(Response):
         return metadataFormat
 
 class ListSets(Response):
-    def __init__(self, request, sets, scroll_id):
+    def __init__(self, request, sets, resumption_token):
         super(ListSets, self).__init__(request)
         self.sets = sets
-        self.scroll_id = scroll_id
+        self.resumption_token = resumption_token
     def get_response_items(self):
         items = [self._set_to_response_item(s) for s in self.sets]
-        if self.scroll_id is not None:
-            items.append(ResponseItem('resumptionToken', self.scroll_id))
+        if self.resumption_token is not None:
+            items.append(ResponseItem('resumptionToken', self.resumption_token))
         return items
     def _set_to_response_item(self, s):
         item = ResponseItem('set')
@@ -82,12 +82,16 @@ class ListSets(Response):
         return item
 
 class Records(Response):
-    def __init__(self, request, records, only_header=False):
+    def __init__(self, request, records, resumption_token, only_header=False):
         super(Records, self).__init__(request)
         self.records = records
         self.only_header = only_header
+        self.resumption_token = resumption_token
     def get_response_items(self):
-        return [self.record_to_response_item(record) for record in self.records]
+        items = [self.record_to_response_item(record) for record in self.records]
+        if self.resumption_token is not None:
+            items.append(ResponseItem('resumptionToken', self.resumption_token))
+        return items
     def record_to_response_item(self, record):
         header = ResponseItem('header')
         header.subitems = [
