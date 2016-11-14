@@ -35,9 +35,9 @@ class Repository(object):
         return earliest_datestamp
     def get_metadata_formats(self):
         out_of_the_box = [
-            MetadataFormat('oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd', 'http://www.openarchives.org/OAI/2.0/oai_dc/'),
-            MetadataFormat('easydb', '', ''),
-            MetadataFormat('easydb_flat', '', 'http://schema.programmfabrik.de/imexport-data/0.1')
+            MetadataFormat('dc', 'oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd', 'http://www.openarchives.org/OAI/2.0/oai_dc/'),
+            MetadataFormat('standard', 'easydb', '', ''),
+            MetadataFormat('standard', 'easydb_flat', '', 'http://schema.programmfabrik.de/imexport-data/0.1')
          ]
         return out_of_the_box + self.metadata_formats
     def get_sets(self, resumption_token, limit=100):
@@ -225,7 +225,7 @@ class Repository(object):
             if record.last_modified is None:
                 record.last_modified = self.get_earliest_datestamp()
             if metadata_info:
-                export_result = self.easydb_context.export_object_as_xml(object_js, metadata_info.mdformat.prefix, metadata_info.user_id, metadata_info.language)
+                export_result = self.easydb_context.export_object_as_xml(object_js, metadata_info.mdformat.ftype, metadata_info.mdformat.prefix, metadata_info.user_id, metadata_info.language)
                 record.metadata = ET.fromstring(export_result['document'])
             return record
         except context.EasydbException as e:
@@ -243,7 +243,8 @@ set_names = {
 }
 
 class MetadataFormat(object):
-    def __init__(self, prefix, schema, namespace):
+    def __init__(self, ftype, prefix, schema, namespace):
+        self.ftype = ftype
         self.prefix = prefix
         self.schema = schema
         self.namespace = namespace

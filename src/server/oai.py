@@ -37,7 +37,7 @@ def oai(easydb_context, parameters):
         for xslt in xslts:
             prefix = context.get_json_value(xslt, 'oai_pmh_prefix')
             if len(prefix) > 0:
-                metadata_formats.append(oai_modules.repository.MetadataFormat(prefix, '', ''))
+                metadata_formats.append(oai_modules.repository.MetadataFormat('xslt', prefix, '', ''))
     # process
     repository = oai_modules.repository.Repository(
         easydb_context,
