@@ -54,6 +54,14 @@ class Request(object):
             return (filter_type, filter_id)
         except ValueError:
             raise ParseError('badArgument', 'wrong set')
+    def _get_metadata_format(self, required=True):
+        prefix = self._get_parameter('metadataPrefix', required)
+        if prefix is not None:
+            for f in self.repository.get_metadata_formats():
+                if f.prefix == prefix:
+                    return f
+            else:
+                raise ParseError('cannotDisseminateFormat')
 
 class Identify(Request):
     def __init__(self, repository, parameters={}):
@@ -85,17 +93,17 @@ class ListIdentifiers(Request):
         set_param = self._get_parameter('set', required=False)
         self.set_filter = self._parse_set_filter(set_param) if set_param is not None else None
         self.resumption_token = self._get_parameter('resumptionToken', False)
-        self.metadataPrefix = self._get_parameter('metadataPrefix', self.resumption_token is None)
+        self.metadata_format = self._get_metadata_format(self.resumption_token is None)
         self.from_filter = self._get_parameter('from', False)
         self.until_filter = self._get_parameter('until', False)
     def process(self):
-        result = self.repository.get_records(self.metadataPrefix, True, self.resumption_token, self.from_filter, self.until_filter, self.set_filter)
+        result = self.repository.get_records(self.metadata_format, True, self.resumption_token, self.from_filter, self.until_filter, self.set_filter)
         if result is None:
             return oai_modules.response.Error(self, 'badResumptionToken')
         records, new_resumption_token = result
         if len(records) == 0:
             return oai_modules.response.Error(self, 'noIdentifiersMatch')
-        return oai_modules.response.Records(self, records, new_resumption_token, only_header=True)
+        return oai_modules.response.Records(self, records, self.metadata_format, new_resumption_token)
 
 class ListRecords(Request):
     def __init__(self, repository, parameters={}):
@@ -103,11 +111,11 @@ class ListRecords(Request):
         set_param = self._get_parameter('set', required=False)
         self.set_filter = self._parse_set_filter(set_param) if set_param is not None else None
         self.resumption_token = self._get_parameter('resumptionToken', False)
-        self.metadataPrefix = self._get_parameter('metadataPrefix')
+        self.metadata_format = self._get_metadata_format()
         self.from_filter = self._get_parameter('from', False)
         self.until_filter = self._get_parameter('until', False)
     def process(self):
-        result = self.repository.get_records(self.metadataPrefix, False, self.resumption_token, self.from_filter, self.until_filter, self.set_filter)
+        result = self.repository.get_records(self.metadata_format, False, self.resumption_token, self.from_filter, self.until_filter, self.set_filter)
         if result is None:
             return oai_modules.response.Error(self, 'badResumptionToken')
         records, new_resumption_token = result
@@ -115,18 +123,18 @@ class ListRecords(Request):
             return oai_modules.response.Error(self, 'badResumptionToken')
         if len(records) == 0:
             return oai_modules.response.Error(self, 'noIdentifiersMatch')
-        return oai_modules.response.Records(self, records, new_resumption_token, only_header=False)
+        return oai_modules.response.Records(self, records, self.metadata_format, new_resumption_token)
 
 class GetRecord(Request):
     def __init__(self, repository, parameters={}):
         super(GetRecord, self).__init__(repository, 'GetRecord', parameters)
         self.uuid = self._parse_identifier(self._get_parameter('identifier'))
-        self.metadataPrefix = self._get_parameter('metadataPrefix')
+        self.metadata_format = self._get_metadata_format()
     def process(self):
-        record = self.repository.get_record(self.uuid)
+        record = self.repository.get_record(self.uuid, self.metadata_format)
         if record is None:
             return oai_modules.response.Error(self, 'idDoesNotExist')
-        return oai_modules.response.Records(self, [record])
+        return oai_modules.response.Records(self, [record], self.metadata_format)
 
 class ParseError(Exception):
     def __init__(self, error_code, error_message=None):

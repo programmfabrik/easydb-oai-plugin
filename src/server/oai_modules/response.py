@@ -10,6 +10,8 @@ class Response(object):
         self.error_code = None
     def __str__(self):
         oaipmh = ET.Element('OAI-PMH', oaipmh_attributes)
+        for namespace in self.get_response_namespaces():
+            ET.register_namespace(namespace.prefix, namespace.url)
         responseDate = ET.SubElement(oaipmh, 'responseDate')
         responseDate.text = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
         request = ET.SubElement(oaipmh, 'request')
@@ -25,6 +27,8 @@ class Response(object):
                 item.add_sub_element(verb)
         return xml.dom.minidom.parseString(ET.tostring(oaipmh, 'UTF-8')).toprettyxml(indent='\t', encoding='UTF-8')
     def get_response_items(self):
+        return []
+    def get_response_namespaces(self):
         return []
 
 class Error(Response):
@@ -82,16 +86,21 @@ class ListSets(Response):
         return item
 
 class Records(Response):
-    def __init__(self, request, records, resumption_token, only_header=False):
+    def __init__(self, request, records, metadata_format, resumption_token=None):
         super(Records, self).__init__(request)
         self.records = records
-        self.only_header = only_header
+        self.metadata_format = metadata_format
         self.resumption_token = resumption_token
     def get_response_items(self):
         items = [self.record_to_response_item(record) for record in self.records]
         if self.resumption_token is not None:
             items.append(ResponseItem('resumptionToken', self.resumption_token))
         return items
+    def get_response_namespaces(self):
+        ns = []
+        if len(self.metadata_format.namespace) > 0:
+            ns.append(ResponseNamespace(self.metadata_format.prefix, self.metadata_format.namespace))
+        return ns
     def record_to_response_item(self, record):
         header = ResponseItem('header')
         header.subitems = [
@@ -99,12 +108,12 @@ class Records(Response):
             ResponseItem('datestamp', record.last_modified)
         ]
         header.subitems += [ResponseItem('setSpec', set_spec) for set_spec in record.set_specs]
-        if self.only_header:
+        if record.metadata is None:
             return header
         metadata = ResponseItem('metadata')
-        # FIXME
-        foo = ResponseItem('foo', 'bar')
-        metadata.subitems = [foo]
+        metadata.subelements = [
+            record.metadata
+        ]
         record_item = ResponseItem('record')
         record_item.subitems = [header, metadata]
         return record_item
@@ -114,12 +123,20 @@ class ResponseItem(object):
         self.name = name
         self.text = text
         self.subitems = []
+        self.subelements = []
     def add_sub_element(self, element):
         se = ET.SubElement(element, self.name)
         if self.text is not None:
             se.text = self.text
         for subitem in self.subitems:
             subitem.add_sub_element(se)
+        for subelement in self.subelements:
+            se.append(subelement)
+
+class ResponseNamespace(object):
+    def __init__(self, prefix, url):
+        self.prefix = prefix
+        self.url = url
 
 oaipmh_attributes = {
     'xmlns': 'http://www.openarchives.org/OAI/2.0/',

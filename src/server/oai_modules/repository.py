@@ -5,6 +5,7 @@ import oai_modules.request
 import oai_modules.response
 import oai_modules.util
 import datetime
+import xml.etree.ElementTree as ET
 
 class Repository(object):
     def __init__(self, easydb_context, base_url, name, namespace_identifier, admin_email, metadata_formats):
@@ -35,8 +36,8 @@ class Repository(object):
     def get_metadata_formats(self):
         out_of_the_box = [
             MetadataFormat('oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd', 'http://www.openarchives.org/OAI/2.0/oai_dc/'),
-            MetadataFormat('easydb_standard', '', ''),
-            MetadataFormat('easydb_flat', '', '')
+            MetadataFormat('easydb', '', ''),
+            MetadataFormat('easydb_flat', '', 'http://schema.programmfabrik.de/imexport-data/0.1')
          ]
         return out_of_the_box + self.metadata_formats
     def get_sets(self, resumption_token, limit=100):
@@ -67,7 +68,7 @@ class Repository(object):
             rt_set = None
             offset = 0
         return (sets, new_resumption_token)
-    def get_records(self, metadata_prefix, only_headers, resumption_token, range_from, range_until, set_filter, limit=100):
+    def get_records(self, metadata_format, only_headers, resumption_token, range_from, range_until, set_filter, limit=100):
         search_format = 'short' if only_headers else 'long'
         if resumption_token is not None:
             parts = resumption_token.split('*')
@@ -87,6 +88,12 @@ class Repository(object):
             except ValueError:
                 return None
             metadata_prefix = parts[5]
+            for f in self.get_metadata_formats():
+                if metadata_prefix == f.prefix:
+                    metadata_format = f
+                    break
+            else:
+                raise oai_modules.util.InternalError('metadata format {} not found'.format(metadata_prefix))
         else:
             offset = 0
         search_elements = []
@@ -121,7 +128,13 @@ class Repository(object):
             'search': search_elements
         }
         response = self.easydb_context.search('user', 'oai_pmh', query)
-        records = [self._parse_record(object_js) for object_js in response['objects']]
+        user_id = response['_user_id']
+        language = response['language']
+        if only_headers:
+            metadata_info = None
+        else:
+            metadata_info = MetadataInfo(user_id, language, metadata_format)
+        records = [self._parse_record(object_js, metadata_info) for object_js in response['objects']]
         if response['count'] > offset + limit:
             token_parts =[]
             if range_from is None:
@@ -137,16 +150,16 @@ class Repository(object):
             else:
                 token_parts.extend([set_filter[0], str(set_filter[1])])
             token_parts.append(str(offset + limit))
-            token_parts.append(metadata_prefix)
+            token_parts.append(metadata_format.prefix)
             new_resumption_token = '*'.join(token_parts)
         else:
             new_resumption_token = None
         return (records, new_resumption_token)
-    def get_record(self, uuid):
+    def get_record(self, uuid, metadata_format):
         query = {
             'type': 'object',
             'generate_rights': False,
-            'format': 'standard',
+            'format': 'long',
             'search': [
                 {
                     'type': 'in',
@@ -158,7 +171,10 @@ class Repository(object):
         response = self.easydb_context.search('user', 'oai_pmh', query)
         if (len(response['objects']) == 0):
             return None
-        return self._parse_record(response['objects'][0])
+        user_id = response['_user_id']
+        language = response['language']
+        metadata_info = MetadataInfo(user_id, language, metadata_format)
+        return self._parse_record(response['objects'][0], metadata_info)
     def _extend_sets(self, all_sets, base_type, offset, limit):
         if base_type == 'objecttype':
             sets, total_count = self._get_objecttypes(offset, limit)
@@ -198,7 +214,7 @@ class Repository(object):
         return (sets, response['count'])
     def _get_spec(self, path_js, base_type):
         return ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), path_js)))
-    def _parse_record(self, object_js):
+    def _parse_record(self, object_js, metadata_info=None):
         try:
             uuid = context.get_json_value(object_js, '_uuid', True)
             record = Record(self, uuid)
@@ -208,6 +224,9 @@ class Repository(object):
             record.last_modified = context.get_json_value(object_js, '_last_modified')
             if record.last_modified is None:
                 record.last_modified = self.get_earliest_datestamp()
+            if metadata_info:
+                export_result = self.easydb_context.export_object_as_xml(object_js, metadata_info.mdformat.prefix, metadata_info.user_id, metadata_info.language)
+                record.metadata = ET.fromstring(export_result['document'])
             return record
         except context.EasydbException as e:
             raise oai_modules.util.InternalError(e.message)
@@ -240,6 +259,13 @@ class Record(object):
         self.identifier = 'oai:{}:{}'.format(repository.namespace_identifier, uuid)
         self.set_specs = []
         self.last_modified = None
+        self.metadata = None
+
+class MetadataInfo(object):
+    def __init__(self, user_id, language, mdformat):
+        self.user_id = user_id
+        self.language = language
+        self.mdformat = mdformat
 
 sql_get_earliest_datestamp_from_config = """
 select value_text as earliest_datestamp
