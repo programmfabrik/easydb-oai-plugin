@@ -226,10 +226,13 @@ class Repository(object):
                 record.last_modified = self.get_earliest_datestamp()
             if metadata_info:
                 export_result = self.easydb_context.export_object_as_xml(object_js, metadata_info.mdformat.ftype, metadata_info.mdformat.prefix, metadata_info.user_id, metadata_info.language)
-                record.metadata = ET.fromstring(export_result['document'])
+                xml_string = context.get_json_value(export_result, 'document', True).encode('utf-8')
+                if len(xml_string) == 0:
+                    xml_string = default_dc_response.format(context.get_json_value(object_js, '_system_object_id', False))
+                record.metadata = ET.fromstring(xml_string)
             return record
-        except context.EasydbException as e:
-            raise oai_modules.util.InternalError(e.message)
+        except Exception as e:
+            raise oai_modules.util.InternalError('could not parse record: {}'.format(e.message))
 
 set_names = {
     'pool': {
@@ -284,3 +287,22 @@ insert into ez_config (class, key, value_text)
 values ('oai_pmh', 'earliest_datestamp', '{}')
 """
 
+default_dc_response = u"""<?xml version="1.0"?>
+<oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title/>
+    <dc:creator/>
+    <dc:subject/>
+    <dc:description/>
+    <dc:publisher/>
+    <dc:contributor/>
+    <dc:date/>
+    <dc:type/>
+    <dc:format/>
+    <dc:identifier>{}</dc:identifier>
+    <dc:source/>
+    <dc:language/>
+    <dc:relation/>
+    <dc:coverage/>
+    <dc:rights/>
+</oai_dc:dc>
+"""
