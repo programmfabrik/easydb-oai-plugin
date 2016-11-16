@@ -3,8 +3,8 @@
 import oai_modules.util
 
 class SetManager(object):
-    def __init__(self, easydb_context):
-        self.easydb_context = easydb_context
+    def __init__(self, repository):
+        self.repository = repository
     def get_sets(self, resumption_token, limit):
         scroll_info = ScrollInfo.parse(resumption_token)
         sets = []
@@ -30,7 +30,7 @@ class SetManager(object):
         all_sets += sets
         return total_count > offset + limit
     def _get_objecttypes(self, offset, limit):
-        datamodel = self.easydb_context.get_datamodel()
+        datamodel = self.repository.easydb_context.get_datamodel()
         table_names = [t['name'] for t in datamodel['user']['tables']]
         table_count = len(table_names)
         offset = min(offset, table_count - 1)
@@ -50,7 +50,7 @@ class SetManager(object):
                 }
             ]
         }
-        response = self.easydb_context.search('user', 'oai_pmh', query)
+        response = self.repository.easydb_context.search('user', 'oai_pmh', query)
         language = response['language']
         has_more = response["count"] > len(response['objects'])
         sets = []
@@ -76,7 +76,10 @@ class ScrollInfo(object):
     def parse(token):
         if token is None:
             return ScrollInfo(None, 0)
-        info = oai_modules.util.untokenize(token)
+        try:
+            info = oai_modules.util.untokenize(token)
+        except Exception:
+            raise oai_modules.util.ParseError('badResumptionToken')
         return ScrollInfo(info['b'], info['o'])
 
 class Set(object):

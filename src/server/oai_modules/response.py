@@ -50,7 +50,8 @@ class Identify(Response):
             ResponseItem('baseURL', self.request.repository.base_url),
             ResponseItem('protocolVersion', '2.0'),
             ResponseItem('earliestDatestamp', self.earliest_datestamp),
-            ResponseItem('deletedRecord', 'persistent'),
+            # ResponseItem('deletedRecord', 'persistent'),
+            ResponseItem('deletedRecord', 'no'),
             ResponseItem('granularity', 'YYYY-MM-DDThh:mm:ssZ'),
             ResponseItem('adminEmail', self.request.repository.admin_email)
         ]

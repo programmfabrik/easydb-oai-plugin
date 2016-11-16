@@ -54,6 +54,11 @@ class InternalError(Exception):
     def __init__(self, message):
         self.message = message
 
+class ParseError(Exception):
+    def __init__(self, error_code, error_message=None):
+        self.error_code = error_code
+        self.error_message = error_message
+
 def tokenize(info_js):
     return base64.b64encode(json.dumps(info_js, separators=(',', ':')))
 
