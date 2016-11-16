@@ -46,6 +46,5 @@ def oai(easydb_context, parameters):
         namespace_identifier,
         admin_email,
         metadata_formats)
-    qs_parameters = oai_modules.util.parse_query_string(parameters['query_string'])
-    response = repository.process_request(qs_parameters)
+    response = repository.process_request(parameters['query_string_parameters'])
     return oai_modules.util.http_xml_response(str(response))

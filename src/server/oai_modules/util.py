@@ -3,6 +3,8 @@
 import sys
 import traceback
 import re
+import json
+import base64
 from context import EasydbException, EasydbError
 
 def handle_exceptions(func):
@@ -12,9 +14,9 @@ def handle_exceptions(func):
         except InternalError as e:
             return http_text_response(e.message, 500)
         except EasydbException as e:
-            raise e
+            return http_text_response('internal error: {}'.format(e), 500)
         except EasydbError as e:
-            raise e
+            return http_text_response('internal error: {}'.format(e), 500)
         except BaseException as e:
             exc_info = sys.exc_info()
             stack = traceback.extract_stack()
@@ -27,7 +29,7 @@ def handle_exceptions(func):
                 ''.join(exc_line)
             ])
             print (traceback_info)
-            raise EasydbException('internal error', traceback_info)
+            return http_text_response('internal error: unexpected error occurred', 500)
     return func_wrapper
 
 def http_text_response(text, status_code=200):
@@ -48,19 +50,12 @@ def http_xml_response(text):
         }
     }
 
-def parse_query_string(query_string):
-    qs_params = {}
-    if len(query_string) > 0:
-        for part in query_string.split('&'):
-            part_parts = part.split('=')
-            key = part_parts[0]
-            if len(part_parts) > 1:
-                value = part_parts[1]
-            else:
-                value = None
-            qs_params[key] = value
-    return qs_params
-
 class InternalError(Exception):
     def __init__(self, message):
         self.message = message
+
+def tokenize(info_js):
+    return base64.b64encode(json.dumps(info_js, separators=(',', ':')))
+
+def untokenize(token):
+    return json.loads(base64.b64decode(token))

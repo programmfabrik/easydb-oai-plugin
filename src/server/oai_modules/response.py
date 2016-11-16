@@ -21,7 +21,10 @@ class Response(object):
             if self.error_message is not None:
                 error.text = self.error_message
         else:
-            request.attrib = self.request.parameters
+            request.attrib = {}
+            for name, values in self.request.parameters.items():
+                if len(values) > 0:
+                    request.attrib[name] = values[0]
             verb = ET.SubElement(oaipmh, self.request.verb)
             for item in self.get_response_items():
                 item.add_sub_element(verb)
@@ -47,7 +50,7 @@ class Identify(Response):
             ResponseItem('baseURL', self.request.repository.base_url),
             ResponseItem('protocolVersion', '2.0'),
             ResponseItem('earliestDatestamp', self.earliest_datestamp),
-            ResponseItem('deletedRecord', 'no'),
+            ResponseItem('deletedRecord', 'persistent'),
             ResponseItem('granularity', 'YYYY-MM-DDThh:mm:ssZ'),
             ResponseItem('adminEmail', self.request.repository.admin_email)
         ]
@@ -103,6 +106,8 @@ class Records(Response):
         return ns
     def record_to_response_item(self, record):
         header = ResponseItem('header')
+        if record.deleted:
+            header.attrib['status'] = 'deleted'
         header.subitems = [
             ResponseItem('identifier', record.identifier),
             ResponseItem('datestamp', record.last_modified)
@@ -124,8 +129,10 @@ class ResponseItem(object):
         self.text = text
         self.subitems = []
         self.subelements = []
+        self.attrib = {}
     def add_sub_element(self, element):
         se = ET.SubElement(element, self.name)
+        se.attrib = self.attrib
         if self.text is not None:
             se.text = self.text
         for subitem in self.subitems:

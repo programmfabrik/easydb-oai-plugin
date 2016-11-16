@@ -12,23 +12,23 @@ class Request(object):
     @staticmethod
     def parse(repository, parameters):
         verb = None
-        for key, value in parameters.items():
-            if value is None:
-                raise ParseError('badArgument', 'query string parameter {} has no value'.format(key))
+        for key, values in parameters.items():
             if key == 'verb':
-                verb = value
+                if len(values) > 1:
+                    raise ParseError('badArgument', 'more than one verbs')
+                verb = values[0]
         if verb is None:
             raise ParseError('badVerb', 'verb argument is missing')
         if verb not in oai_requests:
             raise ParseError('badVerb', 'wrong verb')
         return oai_requests[verb](repository, parameters)
     def _get_parameter(self, name, required=True):
-        if name not in self.parameters:
+        if name not in self.parameters or len(self.parameters[name]) == 0:
             if required:
                 raise ParseError('badArgument', '{} parameter is missing'.format(name))
             else:
                 return None
-        return self.parameters[name]
+        return self.parameters[name][0]
     def _parse_identifier(self, identifier):
         identifier_parts = identifier.split(':')
         if len(identifier_parts) != 3:

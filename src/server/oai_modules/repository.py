@@ -4,6 +4,7 @@ import context
 import oai_modules.request
 import oai_modules.response
 import oai_modules.util
+import oai_modules.set
 import datetime
 import xml.etree.ElementTree as ET
 
@@ -41,33 +42,7 @@ class Repository(object):
          ]
         return out_of_the_box + self.metadata_formats
     def get_sets(self, resumption_token, limit=100):
-        base_types = ['objecttype', 'pool', 'collection']
-        rt_set = None
-        offset = 0
-        if resumption_token is not None:
-            parts = resumption_token.split(':')
-            if len(parts) != 2:
-                return None
-            rt_set = parts[0]
-            if parts[0] not in set_names.keys():
-                return None
-            try:
-                offset = int(parts[1])
-            except ValueError:
-                return None
-        sets = []
-        new_resumption_token = None
-        for base_type in base_types:
-            if rt_set is not None and rt_set != base_type:
-                continue
-            search_limit = limit - len(sets)
-            has_more = self._extend_sets(sets, base_type, offset, search_limit)
-            if has_more:
-                new_resumption_token = '{}:{}'.format(base_type, offset + search_limit)
-                break
-            rt_set = None
-            offset = 0
-        return (sets, new_resumption_token)
+        return oai_modules.set.SetManager(self.easydb_context).get_sets(resumption_token, limit)
     def get_records(self, metadata_format, only_headers, resumption_token, range_from, range_until, set_filter, limit=100):
         search_format = 'short' if only_headers else 'long'
         if resumption_token is not None:
@@ -156,6 +131,15 @@ class Repository(object):
             new_resumption_token = None
         return (records, new_resumption_token)
     def get_record(self, uuid, metadata_format):
+        # deleted
+        db_cursor = self.easydb_context.get_db_cursor()
+        db_cursor.execute(sql_get_deleted_record.format(uuid))
+        if db_cursor.rowcount > 0:
+            record = Record(self, uuid)
+            record.deleted = True
+            record.last_modified = db_cursor.fetchone()['datestamp']
+            return record
+        # existing
         query = {
             'type': 'object',
             'generate_rights': False,
@@ -175,45 +159,6 @@ class Repository(object):
         language = response['language']
         metadata_info = MetadataInfo(user_id, language, metadata_format)
         return self._parse_record(response['objects'][0], metadata_info)
-    def _extend_sets(self, all_sets, base_type, offset, limit):
-        if base_type == 'objecttype':
-            sets, total_count = self._get_objecttypes(offset, limit)
-        else:
-            sets, total_count = self._search_sets(base_type, offset, limit)
-        all_sets += sets
-        return total_count > offset + limit
-    def _get_objecttypes(self, offset, limit):
-        datamodel = self.easydb_context.get_datamodel()
-        table_names = [t['name'] for t in datamodel['user']['tables']]
-        table_count = len(table_names)
-        offset = min(offset, table_count - 1)
-        limit = min(limit, table_count - offset)
-        table_names = table_names[offset:limit]
-        sets = [Set(tn, 'objecttype:{}'.format(tn)) for tn in table_names]
-        return sets, table_count
-    def _search_sets(self, base_type, offset, limit):
-        query = {
-            'type': base_type,
-            'generate_rights': False,
-            'offset': offset,
-            'limit': limit,
-            'sort': [
-                {
-                    'field': '{}._id'.format(base_type)
-                }
-            ]
-        }
-        response = self.easydb_context.search('user', 'oai_pmh', query)
-        language = response['language']
-        has_more = response["count"] > len(response['objects'])
-        sets = []
-        for obj in response['objects']:
-            spec = self._get_spec(obj['_path'], base_type)
-            name = obj['_path'][-1][base_type][set_names[base_type]['objkey']][language]
-            sets.append(Set(name, spec))
-        return (sets, response['count'])
-    def _get_spec(self, path_js, base_type):
-        return ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), path_js)))
     def _parse_record(self, object_js, metadata_info=None):
         try:
             uuid = context.get_json_value(object_js, '_uuid', True)
@@ -234,28 +179,12 @@ class Repository(object):
         except Exception as e:
             raise oai_modules.util.InternalError('could not parse record: {}'.format(e.message))
 
-set_names = {
-    'pool': {
-        'top': 'Pools',
-        'objkey': 'name'
-    },
-    'collection': {
-        'top': 'Collections',
-        'objkey': 'displayname'
-    }
-}
-
 class MetadataFormat(object):
     def __init__(self, ftype, prefix, schema, namespace):
         self.ftype = ftype
         self.prefix = prefix
         self.schema = schema
         self.namespace = namespace
-
-class Set(object):
-    def __init__(self, name, spec):
-        self.name = name
-        self.spec = spec
 
 class Record(object):
     def __init__(self, repository, uuid):
@@ -264,6 +193,7 @@ class Record(object):
         self.set_specs = []
         self.last_modified = None
         self.metadata = None
+        self.deleted = False
 
 class MetadataInfo(object):
     def __init__(self, user_id, language, mdformat):
@@ -285,6 +215,13 @@ from "ez_objects:history";
 sql_insert_earliest_datestamp_into_config = """
 insert into ez_config (class, key, value_text)
 values ('oai_pmh', 'earliest_datestamp', '{}')
+"""
+
+sql_get_deleted_record = """
+select replace(to_char(d."time:created" at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SS'), ' ', 'T') || 'Z' as datestamp
+from "ez_objects:history" i
+join "ez_objects:history" d on (i."ez_object_unique:id:152" = d."ez_object_unique:id:152" and d.":op" = 'DELETE')
+where i.":op" = 'INSERT' and i."uuid:668" = '{}'
 """
 
 default_dc_response = u"""<?xml version="1.0"?>
