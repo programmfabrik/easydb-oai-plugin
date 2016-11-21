@@ -38,7 +38,6 @@ class Repository(object):
         out_of_the_box = [
             MetadataFormat('dc', 'oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd', 'http://www.openarchives.org/OAI/2.0/oai_dc/'),
             MetadataFormat('standard', 'easydb', '', ''),
-            MetadataFormat('standard', 'easydb_flat', '', 'http://schema.programmfabrik.de/imexport-data/0.1')
          ]
         return out_of_the_box + self.metadata_formats
     def get_sets(self, resumption_token, limit=100):
