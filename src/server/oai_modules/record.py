@@ -52,6 +52,10 @@ class RecordManager(object):
                 search_elements.append({'type': 'in', 'objecttype': '_pool', 'in': [scroll_info.set_id]})
             elif scroll_info.set_type == 'collection':
                 search_elements.append({'type': 'in', 'fields': ['_collections._id'], 'in': [scroll_info.set_id]})
+            elif scroll_info.set_type == 'tagfilter':
+                if scroll_info.set_id not in self.repository.tagfilter_sets:
+                    raise oai_modules.util.ParseError('badArgument', 'wrong set')
+                search_elements.extend(self._tagfilter_to_search_elements(self.repository.tagfilter_sets[scroll_info.set_id]))
             else:
                 objecttypes.append(scroll_info.set_id)
         if scroll_info.range_from is not None or scroll_info.range_until is not None:
@@ -113,6 +117,16 @@ class RecordManager(object):
             return record
         except Exception as e:
             raise oai_modules.util.InternalError('could not parse record: {}'.format(e.message))
+    def _tagfilter_to_search_elements(self, tagfilter):
+        return [item for sublist in [self._tagfilter_part_to_search_elements(tf_type, tags) for tf_type, tags in tagfilter.items()] for item in sublist]
+    def _tagfilter_part_to_search_elements(self, tf_type, tags):
+        if tf_type == 'any':
+            return [{ 'type': 'in', 'fields': ['_tags._id'], 'in': tags }]
+        if tf_type == 'not':
+            return [{ 'type': 'in', 'fields': ['_tags._id'], 'in': tags, 'bool': 'must_not' }]
+        if tf_type == 'all':
+            return [{ 'type': 'in', 'fields': ['_tags._id'], 'in': [tag], 'bool': 'must_not' } for tag in tags]
+        return []
 
 class ScrollInfo(object):
     def __init__(self, range_from, range_until, set_type, set_id, offset, metadata_prefix):

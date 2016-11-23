@@ -15,6 +15,7 @@ def easydb_server_start(easydb_context):
 @oai_modules.util.handle_exceptions
 def oai(easydb_context, parameters):
     global repository_base_url
+    metadata_formats = []
     # method
     if (parameters['method'] not in ['GET', 'POST']):
         return oai_modules.util.http_text_response('Method Not Allowed: only GET or POST requests are allowed\n', 405)
@@ -31,8 +32,8 @@ def oai(easydb_context, parameters):
     namespace_identifier = context.get_json_value(base_config, 'oai_pmh.namespace_identifier')
     if len(namespace_identifier) == 0:
         return oai_modules.util.http_text_response('OAI/PMH is disabled (no namespace configured)', 403)
+    tagfilter_sets_js = context.get_json_value(base_config, 'oai_pmh.tagfilter_sets')
     xslts = context.get_json_value(base_config, 'export.xslts')
-    metadata_formats = []
     if xslts is not None:
         for xslt in xslts:
             prefix = context.get_json_value(xslt, 'oai_pmh_prefix')
@@ -45,6 +46,7 @@ def oai(easydb_context, parameters):
         repository_name,
         namespace_identifier,
         admin_email,
-        metadata_formats)
+        metadata_formats,
+        tagfilter_sets_js)
     response = repository.process_request(parameters['query_string_parameters'])
     return oai_modules.util.http_xml_response(str(response))

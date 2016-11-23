@@ -9,24 +9,26 @@ class SetManager(object):
         scroll_info = ScrollInfo.parse(resumption_token)
         sets = []
         new_resumption_token = None
-        for base_type in base_types:
-            if scroll_info.base_type is not None and scroll_info.base_type != base_type:
+        for set_type in set_types:
+            if scroll_info.set_type is not None and scroll_info.set_type != set_type:
                 continue
             search_limit = limit - len(sets)
-            has_more = self._extend_sets(sets, base_type, scroll_info.offset, search_limit)
+            has_more = self._extend_sets(sets, set_type, scroll_info.offset, search_limit)
             if has_more:
                 scroll_info.offset += search_limit
-                scroll_info.base_type = base_type
+                scroll_info.set_type = set_type
                 new_resumption_token = str(scroll_info)
                 break
-            scroll_info.base_type = None
+            scroll_info.set_type = None
             scroll_info.offset = 0
         return (sets, new_resumption_token)
-    def _extend_sets(self, all_sets, base_type, offset, limit):
-        if base_type == 'objecttype':
+    def _extend_sets(self, all_sets, set_type, offset, limit):
+        if set_type == 'objecttype':
             sets, total_count = self._get_objecttypes(offset, limit)
+        elif set_type == 'tagfilter':
+            sets, total_count = self._get_tagfilters(offset, limit)
         else:
-            sets, total_count = self._search_sets(base_type, offset, limit)
+            sets, total_count = self._search_sets(set_type, offset, limit)
         all_sets += sets
         return total_count > offset + limit
     def _get_objecttypes(self, offset, limit):
@@ -38,6 +40,13 @@ class SetManager(object):
         table_names = table_names[offset:offset+limit]
         sets = [Set(tn, 'objecttype:{}'.format(tn)) for tn in table_names]
         return sets, table_count
+    def _get_tagfilters(self, offset, limit):
+        set_count = len(self.repository.tagfilter_set_names)
+        offset = min(offset, set_count - 1)
+        limit = min(limit, set_count - offset)
+        set_names = self.repository.tagfilter_set_names[offset:offset+limit]
+        sets = [Set(tn, 'tagfilter:{}'.format(tn)) for tn in set_names]
+        return sets, set_count
     def _search_sets(self, base_type, offset, limit):
         query = {
             'type': base_type,
@@ -63,12 +72,12 @@ class SetManager(object):
         return ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), path_js)))
 
 class ScrollInfo(object):
-    def __init__(self, base_type, offset):
-        self.base_type = base_type
+    def __init__(self, set_type, offset):
+        self.set_type = set_type
         self.offset = offset
     def __str__(self):
         info = {
-            'b': self.base_type,
+            's': self.set_type,
             'o': self.offset
         }
         return oai_modules.util.tokenize(info)
@@ -80,17 +89,18 @@ class ScrollInfo(object):
             info = oai_modules.util.untokenize(token)
         except Exception:
             raise oai_modules.util.ParseError('badResumptionToken')
-        return ScrollInfo(info['b'], info['o'])
+        return ScrollInfo(info['s'], info['o'])
 
 class Set(object):
     def __init__(self, name, spec):
         self.name = name
         self.spec = spec
 
-base_types = [
+set_types = [
     'objecttype',
     'pool',
-    'collection'
+    'collection',
+    'tagfilter'
 ]
 
 set_names = {

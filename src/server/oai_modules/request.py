@@ -47,10 +47,10 @@ class Request(object):
             raise oai_modules.util.ParseError('badArgument', 'wrong set')
         filter_type = set_parts[0]
         filter_id = set_parts[-1]
-        if filter_type not in ('pool', 'collection', 'objecttype'):
+        if filter_type not in ('pool', 'collection', 'objecttype', 'tagfilter'):
             raise oai_modules.util.ParseError('badArgument', 'wrong set')
         try:
-            if filter_type != 'objecttype':
+            if filter_type not in ('objecttype', 'tagfilter'):
                 filter_id = int(filter_id)
             return (filter_type, filter_id)
         except ValueError:
