@@ -29,7 +29,7 @@ class RecordManager(object):
                 }
             ]
         }
-        response = self.repository.easydb_context.search('user', 'oai_pmh', query)
+        response = self.repository.easydb_context.search('user', 'oai_pmh', query, True)
         if (len(response['objects']) == 0):
             return None
         user_id = response['_user_id']
@@ -79,7 +79,7 @@ class RecordManager(object):
             'format': search_format,
             'search': search_elements
         }
-        response = self.repository.easydb_context.search('user', 'oai_pmh', query)
+        response = self.repository.easydb_context.search('user', 'oai_pmh', query, True)
         user_id = response['_user_id']
         language = response['language']
         if only_headers:
@@ -97,7 +97,7 @@ class RecordManager(object):
         try:
             uuid = context.get_json_value(object_js, '_uuid', True)
             record = Record(self.repository, uuid)
-            sets = context.get_json_value(object_js, '_sets')
+            sets = context.get_json_value(object_js, '_sets') + self._get_tagfilter_sets_for_object(context.get_json_value(object_js, '_tags'))
             if sets is not None:
                 record.set_specs = sets
             record.last_modified = context.get_json_value(object_js, '_last_modified')
@@ -117,6 +117,37 @@ class RecordManager(object):
             return record
         except Exception as e:
             raise oai_modules.util.InternalError('could not parse record: {}'.format(e.message))
+    def _get_tagfilter_sets_for_object(self, tags_js):
+        if tags_js is None:
+            return []
+        tag_ids = [int(tag_js['_id']) for tag_js in tags_js]
+        sets = []
+        for name, tagfilter in self.repository.tagfilter_sets.items():
+            if self._eval_tagfilter(tagfilter, tag_ids):
+                sets.append('tagfilter:{}'.format(name))
+        return sets
+    def _eval_tagfilter(self, tagfilter, tag_ids):
+        for tf_type, tags in tagfilter.items():
+            if not self._eval_tagfilter_part(tf_type, tags, tag_ids):
+                return False
+        return True
+    def _eval_tagfilter_part(self, tf_type, tags, tag_ids):
+        if tf_type == 'any':
+            for tag in tags:
+                if tag in tag_ids:
+                    return True
+            return False
+        if tf_type == 'not':
+            for tag in tags:
+                if tag in tag_ids:
+                    return False
+            return True
+        if tf_type == 'all':
+            for tag in tags:
+                if tag not in tag_ids:
+                    return False
+            return True
+        return True
     def _tagfilter_to_search_elements(self, tagfilter):
         return [item for sublist in [self._tagfilter_part_to_search_elements(tf_type, tags) for tf_type, tags in tagfilter.items()] for item in sublist]
     def _tagfilter_part_to_search_elements(self, tf_type, tags):
@@ -125,7 +156,7 @@ class RecordManager(object):
         if tf_type == 'not':
             return [{ 'type': 'in', 'fields': ['_tags._id'], 'in': tags, 'bool': 'must_not' }]
         if tf_type == 'all':
-            return [{ 'type': 'in', 'fields': ['_tags._id'], 'in': [tag], 'bool': 'must_not' } for tag in tags]
+            return [{ 'type': 'in', 'fields': ['_tags._id'], 'in': [tag] } for tag in tags]
         return []
 
 class ScrollInfo(object):
