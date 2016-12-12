@@ -29,7 +29,7 @@ class RecordManager(object):
                 }
             ]
         }
-        response = self.repository.easydb_context.search('user', 'oai_pmh', query, True)
+        response = self.repository.easydb_context.search('user', 'oai_pmh', query, True, self.repository.include_eas_urls)
         if (len(response['objects']) == 0):
             return None
         user_id = response['_user_id']

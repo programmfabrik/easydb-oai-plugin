@@ -9,13 +9,14 @@ import oai_modules.record
 import datetime
 
 class Repository(object):
-    def __init__(self, easydb_context, base_url, name, namespace_identifier, admin_email, metadata_formats, tagfilter_sets_js):
+    def __init__(self, easydb_context, base_url, name, namespace_identifier, admin_email, metadata_formats, tagfilter_sets_js, include_eas_urls):
         self.easydb_context = easydb_context
         self.base_url = base_url
         self.name = name
         self.namespace_identifier = namespace_identifier
         self.admin_email = admin_email
         self.metadata_formats = metadata_formats
+        self.include_eas_urls = include_eas_urls
         self.tagfilter_set_names = []
         self.tagfilter_sets = {}
         if tagfilter_sets_js is not None:
