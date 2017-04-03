@@ -5,10 +5,12 @@ INSTALL_FILES = \
 
 all: build
 
-include ../base-plugins.make
+include ../../easydb-library/tools/base-plugins.make
 
 build: code
 
-code: $(L10N)
+code:
 
 clean: clean-base
+
+wipe: wipe-base
