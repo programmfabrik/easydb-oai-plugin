@@ -28,6 +28,61 @@ class Response(object):
             verb = ET.SubElement(oaipmh, self.request.verb)
             for item in self.get_response_items():
                 item.add_sub_element(verb)
+
+        # http://effbot.org/zone/element-namespaces.htm
+        # http://effbot.org/zone/copyright.htm
+        # > Unless otherwise noted, source code can be be used freely.
+        # > Examples, test scripts and other short code fragments can be
+        # > considered as being in the public domain.
+        def fixup_element_prefixes(elem, uri_map, memo):
+            def fixup(name):
+                try:
+                    return memo[name]
+                except KeyError:
+                    if name[0] != "{":
+                        return
+                    uri, tag = name[1:].split("}")
+                    if uri in uri_map:
+                        new_name = uri_map[uri] + ":" + tag
+                        memo[name] = new_name
+                        return new_name
+            # fix element name
+            name = fixup(elem.tag)
+            if name:
+                elem.tag = name
+            # fix attribute names
+            for key, value in elem.items():
+                name = fixup(key)
+                if name:
+                    elem.set(name, value)
+                    del elem.attrib[key]
+
+        def fixup_xmlns(elem, maps=None):
+            if maps is None:
+                maps = [{}]
+
+            # check for local overrides
+            xmlns = {}
+            for key, value in elem.items():
+                if key[:6] == "xmlns:":
+                    xmlns[value] = key[6:]
+            if xmlns:
+                uri_map = maps[-1].copy()
+                uri_map.update(xmlns)
+            else:
+                uri_map = maps[-1]
+
+            # fixup this element
+            fixup_element_prefixes(elem, uri_map, {})
+
+            # process elements
+            maps.append(uri_map)
+            for elem in elem:
+                fixup_xmlns(elem, maps)
+            maps.pop()
+
+        fixup_xmlns(oaipmh)
+
         return xml.dom.minidom.parseString(ET.tostring(oaipmh, 'UTF-8')).toprettyxml(indent='\t', encoding='UTF-8')
     def get_response_items(self):
         return []
