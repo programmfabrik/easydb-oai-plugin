@@ -6,6 +6,8 @@ import re
 import json
 import base64
 from context import EasydbException, EasydbError
+import datetime
+import dateutil.parser
 
 def handle_exceptions(func):
     def func_wrapper(*args, **kwargs):
@@ -64,3 +66,10 @@ def tokenize(info_js):
 
 def untokenize(token):
     return json.loads(base64.b64decode(token))
+
+def to_iso_utc_timestring(timestring):
+    d = dateutil.parser.parse(timestring)
+    tzoffset = d.utcoffset()
+    if tzoffset is not None:
+        d = (d - tzoffset).replace(tzinfo = None)
+    return d.isoformat() + "Z"

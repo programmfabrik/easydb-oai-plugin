@@ -103,6 +103,8 @@ class RecordManager(object):
             record.last_modified = context.get_json_value(object_js, '_last_modified')
             if record.last_modified is None:
                 record.last_modified = self.repository.get_earliest_datestamp()
+            else:
+                record.last_modified = oai_modules.util.to_iso_utc_timestring(record.last_modified)
             if metadata_info:
                 export_result = self.repository.easydb_context.export_object_as_xml(
                     object_js,
