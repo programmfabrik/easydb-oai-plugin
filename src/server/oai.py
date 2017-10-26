@@ -9,6 +9,8 @@ def easydb_server_start(easydb_context):
     url_prefix = easydb_context.get_config('system.plugins.url_prefix_internal', False)
     if url_prefix is None:
         url_prefix = easydb_context.get_config('system.plugins.url_prefix')
+    while len(url_prefix) > 0 and url_prefix.endswith("/"):
+        url_prefix = url_prefix[:-1]
     repository_base_url = '{}/api/plugin/base/oai/oai'.format(url_prefix)
     easydb_context.register_callback('api', { 'name': 'oai', 'callback': 'oai'})
 
