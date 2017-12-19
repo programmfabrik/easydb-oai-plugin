@@ -42,6 +42,8 @@ def oai(easydb_context, parameters):
             if len(prefix) > 0:
                 metadata_formats.append(oai_modules.repository.MetadataFormat('xslt', prefix, '', ''))
     include_eas_urls = context.get_json_value(base_config, 'oai_pmh.include_eas_urls')
+    merge_linked_objects = context.get_json_value(base_config, 'oai_pmh.merge_linked_objects')
+
     # process
     repository = oai_modules.repository.Repository(
         easydb_context,
@@ -51,6 +53,7 @@ def oai(easydb_context, parameters):
         admin_email,
         metadata_formats,
         tagfilter_sets_js,
-        include_eas_urls)
+        include_eas_urls,
+        merge_linked_objects)
     response = repository.process_request(parameters['query_string_parameters'])
     return oai_modules.util.http_xml_response(str(response))

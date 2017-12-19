@@ -111,7 +111,8 @@ class RecordManager(object):
                     metadata_info.mdformat.ftype,
                     metadata_info.mdformat.prefix,
                     metadata_info.user_id,
-                    metadata_info.language)
+                    metadata_info.language,
+                    self.repository.merge_linked_objects)
                 xml_string = context.get_json_value(export_result, 'document', True).encode('utf-8')
                 if len(xml_string) == 0:
                     xml_string = default_dc_response.format(context.get_json_value(object_js, '_system_object_id', False))

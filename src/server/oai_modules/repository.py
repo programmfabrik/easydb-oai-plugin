@@ -9,7 +9,7 @@ import oai_modules.record
 import datetime
 
 class Repository(object):
-    def __init__(self, easydb_context, base_url, name, namespace_identifier, admin_email, metadata_formats, tagfilter_sets_js, include_eas_urls):
+    def __init__(self, easydb_context, base_url, name, namespace_identifier, admin_email, metadata_formats, tagfilter_sets_js, include_eas_urls, merge_linked_objects):
         self.easydb_context = easydb_context
         self.base_url = base_url
         self.name = name
@@ -19,6 +19,7 @@ class Repository(object):
         self.include_eas_urls = include_eas_urls
         self.tagfilter_set_names = []
         self.tagfilter_sets = {}
+        self.merge_linked_objects = merge_linked_objects
         if tagfilter_sets_js is not None:
             for tagfilter_set_js in tagfilter_sets_js:
                 set_name = tagfilter_set_js['set_name']
