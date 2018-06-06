@@ -47,7 +47,7 @@ class Repository(object):
     def get_metadata_formats(self):
         out_of_the_box = [
             MetadataFormat('dc', 'oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd', 'http://www.openarchives.org/OAI/2.0/oai_dc/'),
-            MetadataFormat('standard', 'easydb', '', 'http://schema.programmfabrik.de/easydb-data/1.0'),
+            MetadataFormat('standard', 'easydb', 'https://schema.easydb.de/EASYDB/1.0/objects.xsd', 'https://schema.easydb.de/EASYDB/1.0/objects/'),
          ]
         return out_of_the_box + self.metadata_formats
     def get_sets(self, resumption_token, limit=100):
