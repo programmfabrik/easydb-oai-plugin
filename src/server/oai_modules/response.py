@@ -9,9 +9,16 @@ class Response(object):
         self.request = request
         self.error_code = None
     def __str__(self):
-        oaipmh = ET.Element('OAI-PMH', oaipmh_attributes)
+        schemaLocations = ['http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd']
         for namespace in self.get_response_namespaces():
+            schema_def = namespace.url + ' ' + namespace.schema
+            if schema_def not in schemaLocations:
+                schemaLocations.append(schema_def)
             ET.register_namespace(namespace.prefix, namespace.url)
+
+        oaipmh_attributes['xsi:schemaLocation'] = ' '.join(schemaLocations)
+        oaipmh = ET.Element('OAI-PMH', oaipmh_attributes)
+
         responseDate = ET.SubElement(oaipmh, 'responseDate')
         responseDate.text = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
         request = ET.SubElement(oaipmh, 'request')
@@ -158,7 +165,7 @@ class Records(Response):
     def get_response_namespaces(self):
         ns = []
         if len(self.metadata_format.namespace) > 0:
-            ns.append(ResponseNamespace(self.metadata_format.prefix, self.metadata_format.namespace))
+            ns.append(ResponseNamespace(self.metadata_format.prefix, self.metadata_format.namespace, self.metadata_format.schema))
         return ns
     def record_to_response_item(self, record):
         header = ResponseItem('header')
@@ -197,14 +204,14 @@ class ResponseItem(object):
             se.append(subelement)
 
 class ResponseNamespace(object):
-    def __init__(self, prefix, url):
+    def __init__(self, prefix, url, schema):
         self.prefix = prefix
         self.url = url
+        self.schema = schema
 
 oaipmh_attributes = {
     'xmlns': 'http://www.openarchives.org/OAI/2.0/',
     'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-    'xsi:schemaLocation': 'http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd'
 }
 
 

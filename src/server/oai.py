@@ -43,10 +43,10 @@ def oai(easydb_context, parameters):
             namespace = context.get_json_value(xslt, 'namespace')
             if len(prefix) > 0:
                 metadata_formats.append(oai_modules.repository.MetadataFormat(
-					'xslt', prefix,
-					schema if schema is not None else '',
-					namespace if namespace is not None else ''
-				))
+                    'xslt', prefix,
+                    schema if schema is not None else '',
+                    namespace if namespace is not None else ''
+                ))
     include_eas_urls = context.get_json_value(base_config, 'oai_pmh.include_eas_urls')
     merge_linked_objects = context.get_json_value(base_config, 'oai_pmh.merge_linked_objects')
 
