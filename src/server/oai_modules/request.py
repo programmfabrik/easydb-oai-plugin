@@ -43,16 +43,17 @@ class Request(object):
         return identifier_parts[2]
     def _parse_set_filter(self, set_spec):
         set_parts = set_spec.split(':')
-        if len(set_parts) == 1:
+        if len(set_parts) < 2:
             raise oai_modules.util.ParseError('badArgument', 'wrong set')
         filter_type = set_parts[0]
         filter_id = set_parts[-1]
-        if filter_type not in ('pool', 'collection', 'objecttype', 'tagfilter'):
+        if filter_type not in ('pool', 'collection', 'objecttype', 'tagfilter', 'objecttype_pool'):
             raise oai_modules.util.ParseError('badArgument', 'wrong set')
         try:
+            if filter_type == 'objecttype_pool':
+                return (filter_type, (int(filter_id), set_parts[1]))
             if filter_type not in ('objecttype', 'tagfilter'):
-                filter_id = int(filter_id)
-            return (filter_type, filter_id)
+                return (filter_type, int(filter_id))
         except ValueError:
             raise oai_modules.util.ParseError('badArgument', 'wrong set')
     def _get_metadata_format(self, required=True):

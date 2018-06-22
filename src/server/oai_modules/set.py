@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import oai_modules.util
+import json
 
 class SetManager(object):
     def __init__(self, repository):
@@ -8,12 +9,14 @@ class SetManager(object):
     def get_sets(self, resumption_token, limit):
         scroll_info = ScrollInfo.parse(resumption_token)
         sets = []
+        pool_sets = []
+        objecttypes_with_pools = []
         new_resumption_token = None
         for set_type in set_types:
             if scroll_info.set_type is not None and scroll_info.set_type != set_type:
                 continue
             search_limit = limit - len(sets)
-            has_more = self._extend_sets(sets, set_type, scroll_info.offset, search_limit)
+            has_more = self._extend_sets(sets, set_type, scroll_info.offset, search_limit, pool_sets, objecttypes_with_pools)
             if has_more:
                 scroll_info.offset += search_limit
                 scroll_info.set_type = set_type
@@ -21,19 +24,28 @@ class SetManager(object):
                 break
             scroll_info.set_type = None
             scroll_info.offset = 0
+
+        for p in pool_sets:
+            sets += [Set('{} in {}'.format(ot, p[0]), 'objecttype_pool:{}::{}'.format(ot, p[1])) for ot in objecttypes_with_pools]
+
         return (sets, new_resumption_token)
-    def _extend_sets(self, all_sets, set_type, offset, limit):
+    def _extend_sets(self, all_sets, set_type, offset, limit, pool_sets, objecttypes_with_pools):
         if set_type == 'objecttype':
-            sets, total_count = self._get_objecttypes(offset, limit)
+            sets, total_count = self._get_objecttypes(offset, limit, objecttypes_with_pools)
         elif set_type == 'tagfilter':
             sets, total_count = self._get_tagfilters(offset, limit)
         else:
-            sets, total_count = self._search_sets(set_type, offset, limit)
+            sets, total_count = self._search_sets(set_type, offset, limit, pool_sets)
         all_sets += sets
         return total_count > offset + limit
-    def _get_objecttypes(self, offset, limit):
-        datamodel = self.repository.easydb_context.get_datamodel()
-        table_names = [t['name'] for t in datamodel['user']['tables']]
+    def _get_objecttypes(self, offset, limit, objecttypes_with_pools):
+        datamodel = self.repository.easydb_context.get_datamodel(show_easy_pool_link = True)
+        table_names = []
+        for t in datamodel['user']['tables']:
+            table_names.append(t['name'])
+            if 'easy_pool_link' in t:
+                if isinstance(t['easy_pool_link'], bool) and t['easy_pool_link'] == True:
+                    objecttypes_with_pools.append(t['name'])
         table_count = len(table_names)
         offset = min(offset, table_count - 1)
         limit = min(limit, table_count - offset)
@@ -47,7 +59,7 @@ class SetManager(object):
         set_names = self.repository.tagfilter_set_names[offset:offset+limit]
         sets = [Set(tn, 'tagfilter:{}'.format(tn)) for tn in set_names]
         return sets, set_count
-    def _search_sets(self, base_type, offset, limit):
+    def _search_sets(self, base_type, offset, limit, pool_sets):
         query = {
             'type': base_type,
             'generate_rights': False,
@@ -65,8 +77,11 @@ class SetManager(object):
         sets = []
         for obj in response['objects']:
             spec = self._get_spec(obj['_path'], base_type)
-            name = obj['_path'][-1][base_type][set_names[base_type]['objkey']][language]
-            sets.append(Set(name, spec))
+            names = [obj['_path'][i][base_type][set_names[base_type]['objkey']][language] for i in range(len(obj['_path']))]
+            set_name = " / ".join(names[1 if len(names) > 1 else 0 :])
+            if base_type == 'pool':
+                pool_sets.append((set_name, spec))
+            sets.append(Set(set_name, spec))
         return (sets, response['count'])
     def _get_spec(self, path_js, base_type):
         return ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), path_js)))

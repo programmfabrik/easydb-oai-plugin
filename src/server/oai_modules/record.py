@@ -50,6 +50,12 @@ class RecordManager(object):
         if scroll_info.set_type is not None:
             if scroll_info.set_type == 'pool':
                 search_elements.append({'type': 'in', 'objecttype': '_pool', 'in': [scroll_info.set_id]})
+            elif scroll_info.set_type == 'objecttype_pool':
+                try:
+                    search_elements.append({'type': 'in', 'objecttype': '_pool', 'in': [set_id[0]]})
+                    objecttypes.append(set_id[1])
+                except Exception as e:
+                    raise oai_modules.util.ParseError('badArgument', 'wrong set: '+str(e))
             elif scroll_info.set_type == 'collection':
                 search_elements.append({'type': 'in', 'fields': ['_collections._id'], 'in': [scroll_info.set_id]})
             elif scroll_info.set_type == 'tagfilter':
@@ -98,6 +104,13 @@ class RecordManager(object):
             uuid = context.get_json_value(object_js, '_uuid', True)
             record = Record(self.repository, uuid)
             sets = context.get_json_value(object_js, '_sets') + self._get_tagfilter_sets_for_object(context.get_json_value(object_js, '_tags'))
+            try:
+                objecttype = context.get_json_value(object_js, '_objecttype', True)
+                pool_set_spec = context.get_json_value(object_js, str(objecttype) + '._pool._set_spec')
+                if pool_set_spec is not None:
+                    sets += ['objecttype_pool:{}::{}'.format(objecttype, pool_set_spec)]
+            except:
+                pass
             if sets is not None:
                 record.set_specs = sets
             record.last_modified = context.get_json_value(object_js, '_last_modified')
