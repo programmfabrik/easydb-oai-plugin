@@ -53,7 +53,8 @@ class Request(object):
             if filter_type == 'objecttype_pool':
                 return (filter_type, (int(filter_id), set_parts[1]))
             if filter_type not in ('objecttype', 'tagfilter'):
-                return (filter_type, int(filter_id))
+                return filter_type, int(filter_id)
+            return filter_type, filter_id
         except ValueError:
             raise oai_modules.util.ParseError('badArgument', 'wrong set')
     def _get_metadata_format(self, required=True):

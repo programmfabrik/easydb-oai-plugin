@@ -39,9 +39,14 @@ class SetManager(object):
         all_sets += sets
         return total_count > offset + limit
     def _get_objecttypes(self, offset, limit, objecttypes_with_pools):
-        datamodel = self.repository.easydb_context.get_datamodel(show_easy_pool_link = True)
+        datamodel = self.repository.easydb_context.get_datamodel(
+            show_easy_pool_link = True,
+            show_has_easy_owning_tables = True)
         table_names = []
         for t in datamodel['user']['tables']:
+            if 'has_easy_owning_tables' in t:
+                if isinstance(t['has_easy_owning_tables'], bool) and t['has_easy_owning_tables'] == True:
+                    continue
             table_names.append(t['name'])
             if 'easy_pool_link' in t:
                 if isinstance(t['easy_pool_link'], bool) and t['easy_pool_link'] == True:
@@ -77,7 +82,12 @@ class SetManager(object):
         sets = []
         for obj in response['objects']:
             spec = self._get_spec(obj['_path'], base_type)
-            names = [obj['_path'][i][base_type][set_names[base_type]['objkey']][language] for i in range(len(obj['_path']))]
+            names = []
+            for i in range(len(obj['_path'])):
+                if language in obj['_path'][i][base_type][set_names[base_type]['objkey']]:
+                    names.append(obj['_path'][i][base_type][set_names[base_type]['objkey']][language])
+                else:
+                    names.append(spec)
             set_name = " / ".join(names[1 if len(names) > 1 else 0 :])
             if base_type == 'pool':
                 pool_sets.append((set_name, spec))
