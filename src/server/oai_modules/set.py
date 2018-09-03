@@ -4,8 +4,10 @@ import oai_modules.util
 import json
 
 class SetManager(object):
+
     def __init__(self, repository):
         self.repository = repository
+
     def get_sets(self, resumption_token, limit):
         scroll_info = ScrollInfo.parse(resumption_token)
         sets = []
@@ -26,9 +28,9 @@ class SetManager(object):
             scroll_info.offset = 0
 
         for p in pool_sets:
-            sets += [Set('{} in {}'.format(ot, p[0]), 'objecttype_pool:{}::{}'.format(ot, p[1])) for ot in objecttypes_with_pools]
-
+            sets += [Set(u'{} in {}'.format(ot, p[0]), u'objecttype_pool:{}::{}'.format(ot, p[1])) for ot in objecttypes_with_pools]
         return (sets, new_resumption_token)
+
     def _extend_sets(self, all_sets, set_type, offset, limit, pool_sets, objecttypes_with_pools):
         if set_type == 'objecttype':
             sets, total_count = self._get_objecttypes(offset, limit, objecttypes_with_pools)
@@ -38,6 +40,7 @@ class SetManager(object):
             sets, total_count = self._search_sets(set_type, offset, limit, pool_sets)
         all_sets += sets
         return total_count > offset + limit
+
     def _get_objecttypes(self, offset, limit, objecttypes_with_pools):
         datamodel = self.repository.easydb_context.get_datamodel(
             show_easy_pool_link = True,
@@ -55,15 +58,17 @@ class SetManager(object):
         offset = min(offset, table_count - 1)
         limit = min(limit, table_count - offset)
         table_names = table_names[offset:offset+limit]
-        sets = [Set(tn, 'objecttype:{}'.format(tn)) for tn in table_names]
+        sets = [Set(tn, u'objecttype:{}'.format(tn)) for tn in table_names]
         return sets, table_count
+
     def _get_tagfilters(self, offset, limit):
         set_count = len(self.repository.tagfilter_set_names)
         offset = min(offset, set_count - 1)
         limit = min(limit, set_count - offset)
         set_names = self.repository.tagfilter_set_names[offset:offset+limit]
-        sets = [Set(tn, 'tagfilter:{}'.format(tn)) for tn in set_names]
+        sets = [Set(tn, u'tagfilter:{}'.format(tn)) for tn in set_names]
         return sets, set_count
+
     def _search_sets(self, base_type, offset, limit, pool_sets):
         query = {
             'type': base_type,
@@ -76,10 +81,11 @@ class SetManager(object):
                 }
             ]
         }
+
         response = self.repository.easydb_context.search('user', 'oai_pmh', query)
         language = response['language']
-        has_more = response["count"] > len(response['objects'])
         sets = []
+
         for obj in response['objects']:
             spec = self._get_spec(obj['_path'], base_type)
             names = []
@@ -93,19 +99,23 @@ class SetManager(object):
                 pool_sets.append((set_name, spec))
             sets.append(Set(set_name, spec))
         return (sets, response['count'])
+
     def _get_spec(self, path_js, base_type):
         return ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), path_js)))
 
 class ScrollInfo(object):
+
     def __init__(self, set_type, offset):
         self.set_type = set_type
         self.offset = offset
+
     def __str__(self):
         info = {
             's': self.set_type,
             'o': self.offset
         }
         return oai_modules.util.tokenize(info)
+
     @staticmethod
     def parse(token):
         if token is None:
@@ -117,6 +127,7 @@ class ScrollInfo(object):
         return ScrollInfo(info['s'], info['o'])
 
 class Set(object):
+
     def __init__(self, name, spec):
         self.name = name
         self.spec = spec
