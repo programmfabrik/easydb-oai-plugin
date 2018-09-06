@@ -5,7 +5,7 @@ INSTALL_FILES = \
 
 all: build
 
-include ../../easydb-library/tools/base-plugins.make
+include ../../library/tools/base-plugins.make
 
 build: code
 
