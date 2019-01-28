@@ -131,6 +131,9 @@ class RecordManager(object):
                     xml_string = default_dc_response.format(context.get_json_value(object_js, '_system_object_id', False))
                 record.metadata = ET.fromstring(xml_string)
             return record
+        except ET.ParseError as pe:
+            raise oai_modules.util.InternalError(
+                'could not format oai metadata: could not parse xml record: {}'.format(pe.message))
         except Exception as e:
             raise oai_modules.util.InternalError('could not parse record: {}'.format(e.message))
     def _get_tagfilter_sets_for_object(self, tags_js):
