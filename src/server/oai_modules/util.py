@@ -9,6 +9,7 @@ from context import EasydbException, EasydbError
 import datetime
 import dateutil.parser
 
+
 def handle_exceptions(func):
     def func_wrapper(*args, **kwargs):
         try:
@@ -34,6 +35,7 @@ def handle_exceptions(func):
             return http_text_response('internal error: unexpected error occurred', 500)
     return func_wrapper
 
+
 def http_text_response(text, status_code=200):
     return {
         'status_code': status_code,
@@ -42,6 +44,7 @@ def http_text_response(text, status_code=200):
             'Content-Type': 'text/plain; charset=utf-8'
         }
     }
+
 
 def http_xml_response(text):
     return {
@@ -52,24 +55,29 @@ def http_xml_response(text):
         }
     }
 
+
 class InternalError(Exception):
     def __init__(self, message):
         self.message = message
+
 
 class ParseError(Exception):
     def __init__(self, error_code, error_message=None):
         self.error_code = error_code
         self.error_message = error_message
 
+
 def tokenize(info_js):
     return base64.b64encode(json.dumps(info_js, separators=(',', ':')))
 
+
 def untokenize(token):
     return json.loads(base64.b64decode(token))
+
 
 def to_iso_utc_timestring(timestring):
     d = dateutil.parser.parse(timestring)
     tzoffset = d.utcoffset()
     if tzoffset is not None:
-        d = (d - tzoffset).replace(tzinfo = None)
+        d = (d - tzoffset).replace(tzinfo=None)
     return d.isoformat() + "Z"

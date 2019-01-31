@@ -4,12 +4,15 @@ import xml.etree.ElementTree as ET
 import xml.dom.minidom
 import datetime
 
+
 class Response(object):
     def __init__(self, request):
         self.request = request
         self.error_code = None
+
     def __str__(self):
-        schemaLocations = ['http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd']
+        schemaLocations = [
+            'http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd']
         for namespace in self.get_response_namespaces():
             schema_def = namespace.url + ' ' + namespace.schema
             if schema_def not in schemaLocations:
@@ -45,6 +48,7 @@ class Response(object):
             def fixup(name):
                 try:
                     return memo[name]
+
                 except KeyError:
                     if name[0] != "{":
                         return
@@ -52,7 +56,9 @@ class Response(object):
                     if uri in uri_map:
                         new_name = uri_map[uri] + ":" + tag
                         memo[name] = new_name
+
                         return new_name
+
             # fix element name
             name = fixup(elem.tag)
             if name:
@@ -91,10 +97,13 @@ class Response(object):
         fixup_xmlns(oaipmh)
 
         return xml.dom.minidom.parseString(ET.tostring(oaipmh, 'UTF-8')).toprettyxml(indent='\t', encoding='UTF-8')
+
     def get_response_items(self):
         return []
+
     def get_response_namespaces(self):
         return []
+
 
 class Error(Response):
     def __init__(self, request, error_code, error_message=None):
@@ -102,28 +111,32 @@ class Error(Response):
         self.error_code = error_code
         self.error_message = error_message
 
+
 class Identify(Response):
     def __init__(self, request, earliest_datestamp):
         super(Identify, self).__init__(request)
         self.earliest_datestamp = earliest_datestamp
+
     def get_response_items(self):
         return [
             ResponseItem('repositoryName', self.request.repository.name),
             ResponseItem('baseURL', self.request.repository.base_url),
             ResponseItem('protocolVersion', '2.0'),
             ResponseItem('earliestDatestamp', self.earliest_datestamp),
-            # ResponseItem('deletedRecord', 'persistent'),
             ResponseItem('deletedRecord', 'no'),
             ResponseItem('granularity', 'YYYY-MM-DDThh:mm:ssZ'),
             ResponseItem('adminEmail', self.request.repository.admin_email)
         ]
 
+
 class ListMetadataFormats(Response):
     def __init__(self, request, formats):
         super(ListMetadataFormats, self).__init__(request)
         self.formats = formats
+
     def get_response_items(self):
         return [self._format_to_response_item(f) for f in self.formats]
+
     def _format_to_response_item(self, f):
         metadataFormat = ResponseItem('metadataFormat')
         metadataFormat.subitems = [
@@ -131,25 +144,33 @@ class ListMetadataFormats(Response):
             ResponseItem('schema', f.schema),
             ResponseItem('metadataNamespace', f.namespace)
         ]
+
         return metadataFormat
+
 
 class ListSets(Response):
     def __init__(self, request, sets, resumption_token):
         super(ListSets, self).__init__(request)
         self.sets = sets
         self.resumption_token = resumption_token
+
     def get_response_items(self):
         items = [self._set_to_response_item(s) for s in self.sets]
         if self.resumption_token is not None:
-            items.append(ResponseItem('resumptionToken', self.resumption_token))
+            items.append(ResponseItem(
+                'resumptionToken', self.resumption_token))
+
         return items
+
     def _set_to_response_item(self, s):
         item = ResponseItem('set')
         item.subitems = [
             ResponseItem('setName', s.name),
             ResponseItem('setSpec', s.spec)
         ]
+
         return item
+
 
 class Records(Response):
     def __init__(self, request, records, metadata_format, resumption_token=None):
@@ -157,16 +178,24 @@ class Records(Response):
         self.records = records
         self.metadata_format = metadata_format
         self.resumption_token = resumption_token
+
     def get_response_items(self):
-        items = [self.record_to_response_item(record) for record in self.records]
+        items = [self.record_to_response_item(
+            record) for record in self.records]
         if self.resumption_token is not None:
-            items.append(ResponseItem('resumptionToken', self.resumption_token))
+            items.append(ResponseItem(
+                'resumptionToken', self.resumption_token))
+
         return items
+
     def get_response_namespaces(self):
         ns = []
         if len(self.metadata_format.namespace) > 0:
-            ns.append(ResponseNamespace(self.metadata_format.prefix, self.metadata_format.namespace, self.metadata_format.schema))
+            ns.append(ResponseNamespace(self.metadata_format.prefix,
+                                        self.metadata_format.namespace, self.metadata_format.schema))
+
         return ns
+
     def record_to_response_item(self, record):
         header = ResponseItem('header')
         if record.deleted:
@@ -175,16 +204,21 @@ class Records(Response):
             ResponseItem('identifier', record.identifier),
             ResponseItem('datestamp', record.last_modified)
         ]
-        header.subitems += [ResponseItem('setSpec', set_spec) for set_spec in record.set_specs]
+        header.subitems += [ResponseItem('setSpec', set_spec)
+                            for set_spec in record.set_specs]
+
         if record.metadata is None:
             return header
+
         metadata = ResponseItem('metadata')
         metadata.subelements = [
             record.metadata
         ]
         record_item = ResponseItem('record')
         record_item.subitems = [header, metadata]
+
         return record_item
+
 
 class ResponseItem(object):
     def __init__(self, name, text=None):
@@ -193,6 +227,7 @@ class ResponseItem(object):
         self.subitems = []
         self.subelements = []
         self.attrib = {}
+
     def add_sub_element(self, element):
         se = ET.SubElement(element, self.name)
         se.attrib = self.attrib
@@ -203,15 +238,15 @@ class ResponseItem(object):
         for subelement in self.subelements:
             se.append(subelement)
 
+
 class ResponseNamespace(object):
     def __init__(self, prefix, url, schema):
         self.prefix = prefix
         self.url = url
         self.schema = schema
 
+
 oaipmh_attributes = {
     'xmlns': 'http://www.openarchives.org/OAI/2.0/',
     'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
 }
-
-

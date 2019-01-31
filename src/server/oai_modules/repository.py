@@ -8,6 +8,7 @@ import oai_modules.set
 import oai_modules.record
 import datetime
 
+
 class Repository(object):
     def __init__(self, easydb_context, base_url, name, namespace_identifier, admin_email, metadata_formats, tagfilter_sets_js, include_eas_urls, merge_linked_objects):
         self.easydb_context = easydb_context
@@ -26,6 +27,7 @@ class Repository(object):
                 tagfilter = tagfilter_set_js['tagfilter']
                 self.tagfilter_set_names.append(set_name)
                 self.tagfilter_sets[set_name] = tagfilter
+
     def process_request(self, parameters):
         try:
             request = oai_modules.request.Request.parse(self, parameters)
@@ -33,29 +35,40 @@ class Repository(object):
         except oai_modules.util.ParseError as e:
             request = oai_modules.request.Request(self)
             return oai_modules.response.Error(request, e.error_code, e.error_message)
+
     def get_earliest_datestamp(self):
         db_cursor = self.easydb_context.get_db_cursor()
         db_cursor.execute(sql_get_earliest_datestamp_from_config)
         if db_cursor.rowcount > 0:
             return db_cursor.fetchone()['earliest_datestamp']
+
         db_cursor.execute(sql_get_earliest_datestamp_from_history)
         if db_cursor.rowcount < 1:
             return datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+
         earliest_datestamp = db_cursor.fetchone()['earliest_datestamp']
-        db_cursor.execute(sql_insert_earliest_datestamp_into_config.format(earliest_datestamp))
+        db_cursor.execute(
+            sql_insert_earliest_datestamp_into_config.format(earliest_datestamp))
         return earliest_datestamp
+
     def get_metadata_formats(self):
         out_of_the_box = [
-            MetadataFormat('dc', 'oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd', 'http://www.openarchives.org/OAI/2.0/oai_dc/'),
-            MetadataFormat('standard', 'easydb', 'https://schema.easydb.de/EASYDB/1.0/objects.xsd', 'https://schema.easydb.de/EASYDB/1.0/objects/'),
-         ]
+            MetadataFormat('dc', 'oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd',
+                           'http://www.openarchives.org/OAI/2.0/oai_dc/'),
+            MetadataFormat('standard', 'easydb', 'https://schema.easydb.de/EASYDB/1.0/objects.xsd',
+                           'https://schema.easydb.de/EASYDB/1.0/objects/'),
+        ]
         return out_of_the_box + self.metadata_formats
+
     def get_sets(self, resumption_token, limit=100):
         return oai_modules.set.SetManager(self).get_sets(resumption_token, limit)
+
     def get_record(self, uuid, metadata_format):
         return oai_modules.record.RecordManager(self).get_record(uuid, metadata_format)
+
     def get_records(self, metadata_format, only_headers, resumption_token, range_from, range_until, set_type, set_id, limit=100):
         return oai_modules.record.RecordManager(self).get_records(metadata_format, only_headers, resumption_token, range_from, range_until, set_type, set_id, limit)
+
 
 class MetadataFormat(object):
     def __init__(self, ftype, prefix, schema, namespace):
@@ -80,4 +93,3 @@ sql_insert_earliest_datestamp_into_config = """
 insert into ez_config (class, key, value_text)
 values ('oai_pmh', 'earliest_datestamp', '{}')
 """
-

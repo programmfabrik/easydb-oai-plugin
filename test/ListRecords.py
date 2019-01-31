@@ -27,10 +27,12 @@ parameters = [
     'setSpecs'
 ]
 
+
 def attr_to_str(attr):
     if isinstance(attr, list):
         return ', '.join(attr)
     return attr
+
 
 for record in records:
     table = [[p, attr_to_str(getattr(record.header, p))] for p in parameters]

@@ -27,10 +27,12 @@ parameters = [
     'setSpecs'
 ]
 
+
 def attr_to_str(attr):
     if isinstance(attr, list):
         return ', '.join(attr)
     return attr
+
 
 table = [[attr_to_str(getattr(i, p)) for p in parameters] for i in identifiers]
 print (tabulate(table, headers=parameters))
