@@ -38,15 +38,19 @@ def oai(easydb_context, parameters):
     xslts = context.get_json_value(base_config, 'export.xslts')
     if xslts is not None:
         for xslt in xslts:
+            use_for_oai_pmh = context.get_json_value(xslt, 'use_for_oai_pmh')
+            if not isinstance(use_for_oai_pmh, bool) or not use_for_oai_pmh:
+                continue
             prefix = context.get_json_value(xslt, 'oai_pmh_prefix')
+            if len(prefix) < 1:
+                continue
             schema = context.get_json_value(xslt, 'schema')
             namespace = context.get_json_value(xslt, 'namespace')
-            if len(prefix) > 0:
-                metadata_formats.append(oai_modules.repository.MetadataFormat(
-                    'xslt', prefix,
-                    schema if schema is not None else '',
-                    namespace if namespace is not None else ''
-                ))
+            metadata_formats.append(oai_modules.repository.MetadataFormat(
+                'xslt', prefix,
+                schema if schema is not None else '',
+                namespace if namespace is not None else ''
+            ))
     include_eas_urls = context.get_json_value(base_config, 'oai_pmh.include_eas_urls')
     merge_linked_objects = context.get_json_value(base_config, 'oai_pmh.merge_linked_objects')
 
