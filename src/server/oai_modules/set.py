@@ -31,7 +31,7 @@ class SetManager(object):
             scroll_info.offset = 0
 
         for p in pool_sets:
-            sets += [Set(u'{} in {}'.format(ot, p[0]), u'objecttype_pool:{}::{}'.format(ot, p[1]))
+            sets += [Set(u'{} in {}'.format(ot, p[0]), u'objecttype_pool:{}:{}'.format(ot, p[1]))
                      for ot in objecttypes_with_pools]
 
         return (sets, new_resumption_token)

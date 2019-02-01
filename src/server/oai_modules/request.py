@@ -139,6 +139,8 @@ class ListIdentifiers(Request):
             self.metadata_format, True, self.resumption_token, self.from_filter, self.until_filter, self.set_type, self.set_id)
         if result is None:
             return oai_modules.response.Error(self, 'badResumptionToken')
+        elif isinstance(result, oai_modules.response.Error):
+            return result
 
         records, new_resumption_token, metadata_format = result
         if len(records) == 0:
@@ -173,6 +175,8 @@ class ListRecords(Request):
                                              self.from_filter, self.until_filter, self.set_type, self.set_id, limit=5)
         if result is None:
             return oai_modules.response.Error(self, 'badResumptionToken')
+        elif isinstance(result, oai_modules.response.Error):
+            return result
 
         records, new_resumption_token, metadata_format = result
         if records is None:

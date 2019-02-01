@@ -122,10 +122,10 @@ class Identify(Response):
             ResponseItem('repositoryName', self.request.repository.name),
             ResponseItem('baseURL', self.request.repository.base_url),
             ResponseItem('protocolVersion', '2.0'),
+            ResponseItem('adminEmail', self.request.repository.admin_email),
             ResponseItem('earliestDatestamp', self.earliest_datestamp),
             ResponseItem('deletedRecord', 'no'),
-            ResponseItem('granularity', 'YYYY-MM-DDThh:mm:ssZ'),
-            ResponseItem('adminEmail', self.request.repository.admin_email)
+            ResponseItem('granularity', 'YYYY-MM-DDThh:mm:ssZ')
         ]
 
 
@@ -165,8 +165,8 @@ class ListSets(Response):
     def _set_to_response_item(self, s):
         item = ResponseItem('set')
         item.subitems = [
-            ResponseItem('setName', s.name),
-            ResponseItem('setSpec', s.spec)
+            ResponseItem('setSpec', s.spec),
+            ResponseItem('setName', s.name)
         ]
 
         return item
