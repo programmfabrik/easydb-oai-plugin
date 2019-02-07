@@ -9,7 +9,6 @@ def easydb_server_start(easydb_context):
     global repository_base_url
     url_prefix = easydb_context.get_config(
         'system.plugins.url_prefix_internal', False)
-
     if url_prefix is None:
         url_prefix = easydb_context.get_config('system.plugins.url_prefix')
 
@@ -33,7 +32,6 @@ def oai(easydb_context, parameters):
     base_config = easydb_context.get_config('base.system')
     if not context.get_json_value(base_config, 'oai_pmh.enabled'):
         return oai_modules.util.http_text_response('OAI/PMH is disabled', 403)
-
     repository_name = context.get_json_value(
         base_config, 'oai_pmh.repository_name')
     if len(repository_name) == 0:
@@ -42,7 +40,6 @@ def oai(easydb_context, parameters):
     admin_email = context.get_json_value(base_config, 'oai_pmh.admin_email')
     if len(admin_email) == 0:
         return oai_modules.util.http_text_response('OAI/PMH is disabled (no admin e-mail configured)', 403)
-
     namespace_identifier = context.get_json_value(
         base_config, 'oai_pmh.namespace_identifier')
     if len(namespace_identifier) == 0:

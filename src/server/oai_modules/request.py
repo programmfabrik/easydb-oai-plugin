@@ -54,7 +54,6 @@ class Request(object):
         if len(identifier_parts[2]) == 0:
             raise oai_modules.util.ParseError(
                 'idDoesNotExist', 'wrong identifier')
-
         return identifier_parts[2]
 
     def _parse_set_filter(self, set_spec):

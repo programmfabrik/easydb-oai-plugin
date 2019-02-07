@@ -33,7 +33,6 @@ class RecordManager(object):
         }
         response = self.repository.easydb_context.search(
             'user', 'oai_pmh', query, True, self.repository.include_eas_urls)
-
         if (len(response['objects']) == 0):
             return None
 
@@ -64,7 +63,6 @@ class RecordManager(object):
         else:
             raise oai_modules.util.InternalError(
                 'metadata format {} not found'.format(scroll_info.metadata_prefix))
-
         search_elements = []
         objecttypes = []
 
@@ -142,7 +140,6 @@ class RecordManager(object):
         }
         response = self.repository.easydb_context.search(
             'user', 'oai_pmh', query, True)
-
         user_id = response['_user_id']
         language = response['language']
 
@@ -188,13 +185,11 @@ class RecordManager(object):
                 record.set_specs = sets
             record.last_modified = context.get_json_value(
                 object_js, '_last_modified')
-
             if record.last_modified is None:
                 record.last_modified = self.repository.get_earliest_datestamp()
             else:
                 record.last_modified = oai_modules.util.to_iso_utc_timestring(
                     record.last_modified)
-
             if metadata_info:
                 export_result = self.repository.easydb_context.export_object_as_xml(
                     object_js,

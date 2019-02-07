@@ -159,7 +159,6 @@ class ListSets(Response):
         if self.resumption_token is not None:
             items.append(ResponseItem(
                 'resumptionToken', self.resumption_token))
-
         return items
 
     def _set_to_response_item(self, s):
@@ -185,7 +184,6 @@ class Records(Response):
         if self.resumption_token is not None:
             items.append(ResponseItem(
                 'resumptionToken', self.resumption_token))
-
         return items
 
     def get_response_namespaces(self):
@@ -193,7 +191,6 @@ class Records(Response):
         if len(self.metadata_format.namespace) > 0:
             ns.append(ResponseNamespace(self.metadata_format.prefix,
                                         self.metadata_format.namespace, self.metadata_format.schema))
-
         return ns
 
     def record_to_response_item(self, record):
@@ -206,7 +203,6 @@ class Records(Response):
         ]
         header.subitems += [ResponseItem('setSpec', set_spec)
                             for set_spec in record.set_specs]
-
         if record.metadata is None:
             return header
 

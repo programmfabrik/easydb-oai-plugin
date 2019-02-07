@@ -53,7 +53,6 @@ class SetManager(object):
         datamodel = self.repository.easydb_context.get_datamodel(
             show_easy_pool_link=True,
             show_has_easy_owning_tables=True)
-
         table_names = []
         for t in datamodel['user']['tables']:
             if 'has_easy_owning_tables' in t:
