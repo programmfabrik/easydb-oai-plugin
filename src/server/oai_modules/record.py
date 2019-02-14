@@ -165,31 +165,33 @@ class RecordManager(object):
             record = Record(self.repository, uuid)
             sets = set()
 
-            for _set in context.get_json_value(object_js, '_sets'):
-                sets.add(_set)
             for _set in self._get_tagfilter_sets_for_object(context.get_json_value(object_js, '_tags')):
                 sets.add(_set)
 
-            try:
-                objecttype = context.get_json_value(
-                    object_js, '_objecttype', True)
-                pool_set_spec = context.get_json_value(
-                    object_js, str(objecttype) + '._pool._set_spec')
-                if pool_set_spec is not None:
-                    sets.add('objecttype_pool:{}:{}'.format(
-                        objecttype, pool_set_spec))
-            except:
-                pass
+            if '_objecttype' in object_js:
+                objecttype = object_js['_objecttype']
+                sets.add('objecttype:' + objecttype)
+                pool = context.get_json_value(object_js, objecttype + "._pool")
+
+                if pool is not None:
+                    pool_path = [str(context.get_json_value(p, "pool._id", True)) for p in pool['_path']]
+
+                    if len(pool_path) > 0:
+                        pool_set_spec = 'pool:' + ':'.join(pool_path)
+                        sets.add(pool_set_spec)
+                        sets.add('objecttype_pool:{}:{}'.format(objecttype, pool_set_spec))
 
             if sets is not None:
                 record.set_specs = sets
             record.last_modified = context.get_json_value(
                 object_js, '_last_modified')
+
             if record.last_modified is None:
                 record.last_modified = self.repository.get_earliest_datestamp()
             else:
                 record.last_modified = oai_modules.util.to_iso_utc_timestring(
                     record.last_modified)
+
             if metadata_info:
                 export_result = self.repository.easydb_context.export_object_as_xml(
                     object_js,
