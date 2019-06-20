@@ -143,7 +143,7 @@ class ListIdentifiers(Request):
 
         records, new_resumption_token, metadata_format = result
         if len(records) == 0:
-            return oai_modules.response.Error(self, 'noIdentifiersMatch')
+            return oai_modules.response.Error(self, 'noRecordsMatch')
 
         return oai_modules.response.Records(self, records, metadata_format, new_resumption_token)
 
@@ -182,7 +182,7 @@ class ListRecords(Request):
             return oai_modules.response.Error(self, 'badResumptionToken')
 
         if len(records) == 0:
-            return oai_modules.response.Error(self, 'noIdentifiersMatch')
+            return oai_modules.response.Error(self, 'noRecordsMatch')
 
         return oai_modules.response.Records(self, records, metadata_format, new_resumption_token)
 
