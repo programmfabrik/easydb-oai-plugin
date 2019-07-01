@@ -7,11 +7,7 @@ import oai_modules.util
 
 def easydb_server_start(easydb_context):
     global repository_base_url
-    url_prefix = easydb_context.get_config(
-        'system.plugins.url_prefix_internal', False)
-    if url_prefix is None:
-        url_prefix = easydb_context.get_config('system.plugins.url_prefix')
-
+    url_prefix = easydb_context.get_config('system.server.external_url', True)
     while len(url_prefix) > 0 and url_prefix.endswith("/"):
         url_prefix = url_prefix[:-1]
 
