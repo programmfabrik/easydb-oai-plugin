@@ -86,16 +86,15 @@ class SetManager(object):
 
         response = self.repository.easydb_context.search(
             'user', 'oai_pmh', query)
-        language = response['language']
         sets = []
 
         for obj in response['objects']:
             spec = self._get_spec(obj['_path'], base_type)
             names = []
             for i in range(len(obj['_path'])):
-                if language in obj['_path'][i][base_type][set_names[base_type]['objkey']]:
+                if self.repository.search_language in obj['_path'][i][base_type][set_names[base_type]['objkey']]:
                     names.append(obj['_path'][i][base_type]
-                                 [set_names[base_type]['objkey']][language])
+                                 [set_names[base_type]['objkey']][self.repository.search_language])
                 else:
                     names.append(spec)
             set_name = " / ".join(names[1 if len(names) > 1 else 0:])
@@ -124,12 +123,11 @@ class ScrollInfo(object):
         if token is None:
             return ScrollInfo(0)
         try:
-            info = oai_modules.util.untokenize(token)
+            return ScrollInfo(oai_modules.util.untokenize(token)['o'])
         except Exception:
             raise oai_modules.util.ParseError('badResumptionToken')
 
-        return ScrollInfo(info['o'])
-
+        return None
 
 class Set(object):
 

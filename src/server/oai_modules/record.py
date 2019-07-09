@@ -297,8 +297,13 @@ class ScrollInfo(object):
         if token is None:
             return ScrollInfo(range_from, range_until, set_type, set_id, 0, metadata_prefix)
 
-        info = oai_modules.util.untokenize(token)
-        return ScrollInfo(info['f'], info['u'], info['t'], info['i'], info['o'], info['m'])
+        try:
+            info = oai_modules.util.untokenize(token)
+            return ScrollInfo(info['f'], info['u'], info['t'], info['i'], info['o'], info['m'])
+        except Exception:
+            raise oai_modules.util.ParseError('badResumptionToken')
+
+        return None
 
 
 class Record(object):

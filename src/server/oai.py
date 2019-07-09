@@ -41,6 +41,11 @@ def oai(easydb_context, parameters):
     if len(namespace_identifier) == 0:
         return oai_modules.util.http_text_response('OAI/PMH is disabled (no namespace configured)', 403)
 
+    search_language = 'en-US'
+    lang = context.get_json_value(base_config, 'languages.database')
+    if lang is not None and isinstance(lang, list) and len(lang) > 0 and len(lang[0]) > 0:
+            search_language = lang[0]
+
     tagfilter_sets_js = context.get_json_value(
         base_config, 'oai_pmh.tagfilter_sets')
 
@@ -78,7 +83,8 @@ def oai(easydb_context, parameters):
         metadata_formats,
         tagfilter_sets_js,
         include_eas_urls,
-        merge_linked_objects)
+        merge_linked_objects,
+        search_language)
 
     response = repository.process_request(
         parameters['query_string_parameters'])
