@@ -117,9 +117,13 @@ class RecordManager(object):
             }
 
             if scroll_info.range_from is not None:
+                if not self.repository.datatime_format_ok(scroll_info.range_from):
+                    raise oai_modules.util.ParseError('badArgument', 'from: ' + scroll_info.range_from)
                 search_element['from'] = scroll_info.range_from
 
             if scroll_info.range_until is not None:
+                if not self.repository.datatime_format_ok(scroll_info.range_until):
+                    raise oai_modules.util.ParseError('badArgument', 'until: ' + scroll_info.range_until)
                 search_element['to'] = scroll_info.range_until
 
             search_elements.append(search_element)
