@@ -86,15 +86,16 @@ class SetManager(object):
 
         response = self.repository.easydb_context.search(
             'user', 'oai_pmh', query)
+        language = response['language']
         sets = []
 
         for obj in response['objects']:
             spec = self._get_spec(obj['_path'], base_type)
             names = []
             for i in range(len(obj['_path'])):
-                if self.repository.search_language in obj['_path'][i][base_type][set_names[base_type]['objkey']]:
+                if language in obj['_path'][i][base_type][set_names[base_type]['objkey']]:
                     names.append(obj['_path'][i][base_type]
-                                 [set_names[base_type]['objkey']][self.repository.search_language])
+                                 [set_names[base_type]['objkey']][language])
                 else:
                     names.append(spec)
             set_name = " / ".join(names[1 if len(names) > 1 else 0:])
