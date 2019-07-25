@@ -2,12 +2,13 @@
 
 import oai_modules.util
 import json
-
+from context import get_json_value
 
 class SetManager(object):
 
     def __init__(self, repository):
         self.repository = repository
+        self.objecttypes_with_pools = []
 
     def get_sets(self, resumption_token, limit):
         if limit < 1:
@@ -16,18 +17,14 @@ class SetManager(object):
         scroll_info = ScrollInfo.parse(resumption_token)
         sets = []
         pool_sets = []
-        objecttypes_with_pools = []
-        new_resumption_token = None
 
+        new_resumption_token = None
         offset = scroll_info.offset
 
-        for set_type in set_types:
-            self._extend_sets(sets, set_type, pool_sets,
-                              objecttypes_with_pools)
+        self._get_objecttypes()
 
-        for p in pool_sets:
-            sets += [Set(u'{} in {}'.format(ot, p[0]), u'objecttype_pool:{}:{}'.format(ot, p[1]))
-                     for ot in objecttypes_with_pools]
+        for set_type in set_types:
+            self._extend_sets(sets, set_type, pool_sets)
 
         if offset + limit < len(sets):
             scroll_info.offset += limit
@@ -35,18 +32,14 @@ class SetManager(object):
 
         return (sets[offset: offset + limit], new_resumption_token)
 
-    def _extend_sets(self, all_sets, set_type, pool_sets, objecttypes_with_pools):
-        if set_type == 'objecttype':
-            sets, total_count = self._get_objecttypes(objecttypes_with_pools)
-        elif set_type == 'tagfilter':
-            sets, total_count = self._get_tagfilters()
+    def _extend_sets(self, all_sets, set_type, pool_sets):
+        if set_type == 'tagfilter':
+            sets = self._get_tagfilters()
         else:
-            sets, total_count = self._search_sets(set_type, pool_sets)
+            sets = self._search_sets(set_type, pool_sets)
         all_sets += sets
 
-        return total_count
-
-    def _get_objecttypes(self, objecttypes_with_pools):
+    def _get_objecttypes(self):
         datamodel = self.repository.easydb_context.get_datamodel(
             show_easy_pool_link=True,
             show_has_easy_owning_tables=True)
@@ -58,21 +51,16 @@ class SetManager(object):
             table_names.append(t['name'])
             if 'easy_pool_link' in t:
                 if isinstance(t['easy_pool_link'], bool) and t['easy_pool_link'] == True:
-                    objecttypes_with_pools.append(t['name'])
-
-        table_count = len(table_names)
-        sets = [Set(tn, u'objecttype:{}'.format(tn)) for tn in table_names]
-
-        return sets, table_count
+                    self.objecttypes_with_pools.append(t['name'])
 
     def _get_tagfilters(self):
-        set_count = len(self.repository.tagfilter_set_names)
         set_names = self.repository.tagfilter_set_names
         sets = [Set(tn, u'tagfilter:{}'.format(tn)) for tn in set_names]
 
-        return sets, set_count
+        return sets
 
     def _search_sets(self, base_type, pool_sets):
+
         query = {
             'type': base_type,
             'generate_rights': False,
@@ -89,23 +77,111 @@ class SetManager(object):
         language = response['language']
         sets = []
 
-        for obj in response['objects']:
-            spec = self._get_spec(obj['_path'], base_type)
-            names = []
-            for i in range(len(obj['_path'])):
-                if language in obj['_path'][i][base_type][set_names[base_type]['objkey']]:
-                    names.append(obj['_path'][i][base_type]
-                                 [set_names[base_type]['objkey']][language])
-                else:
-                    names.append(spec)
+        if base_type == 'pool':
+            sets += self._search_pools_objecttypes(response['objects'], language)
+        else:
+            for obj in response['objects']:
+                spec = self._get_spec(obj['_path'], base_type)
+                names = self._get_names(obj['_path'], base_type, spec, language)
+                set_name = " / ".join(names[1 if len(names) > 1 else 0:])
+                sets.append(Set(set_name, spec))
+
+        return sets
+
+    def _search_pools_objecttypes(self, pools, language):
+        _sets = []
+        _pools = {}
+        not_empty_objecttypes_with_pools = []
+
+        # add non-empty pools to the set list
+        for p in pools:
+            spec = self._get_spec(p['_path'], 'pool')
+            names = self._get_names(p['_path'], 'pool', spec, language)
             set_name = " / ".join(names[1 if len(names) > 1 else 0:])
-            if base_type == 'pool':
-                pool_sets.append((set_name, spec))
-            sets.append(Set(set_name, spec))
-        return (sets, response['count'])
+            _sets.append(Set(set_name, spec))
+
+            _pool_id = get_json_value(p, 'pool._id')
+            if _pool_id is not None:
+                _pools[_pool_id] = [set_name, spec]
+
+        # add objecttypes to the set list
+        query = {
+            'search': [],
+            'limit': 0,
+            'aggregations': {
+                '_objecttype': {
+                    'limit': 1000000,
+                    'type': 'term',
+                    'field': '_objecttype'
+                }
+            },
+            'generate_rights': False
+        }
+        response = self.repository.easydb_context.search('user', 'oai_pmh', query)
+
+        _terms = get_json_value(response, 'aggregations._objecttype.terms')
+        if _terms is None:
+            return _sets
+
+        for _term in _terms:
+            _ot = get_json_value(_term, 'term')
+            if _ot is None:
+                continue
+            _sets.append(Set(_ot, 'objecttype:%s' % _ot))
+
+            if _ot in self.objecttypes_with_pools:
+                not_empty_objecttypes_with_pools.append(_ot)
+
+        if len(not_empty_objecttypes_with_pools) < 1:
+            return _sets
+
+        # add combinations of pools and objecttypes to the set list
+        query = {
+            'search': [],
+            'limit': 0,
+            'aggregations': {},
+            'objecttypes': not_empty_objecttypes_with_pools,
+            'generate_rights': False
+        }
+        for _ot in not_empty_objecttypes_with_pools:
+            query['aggregations'][_ot] = {
+                'type': 'term',
+                'field': '%s._pool.pool._id' % _ot,
+                'sort': 'term',
+                'limit': 1000000
+            }
+        response = self.repository.easydb_context.search('user', 'oai_pmh', query)
+
+        for _ot in not_empty_objecttypes_with_pools:
+            _terms = get_json_value(response, 'aggregations.%s.terms' % _ot)
+            if _terms is None:
+                continue
+
+            for _term in _terms:
+                _pool_id = get_json_value(_term, 'term')
+                if _pool_id is None:
+                    continue
+                if not _pool_id in _pools:
+                    continue
+
+                _sets.append(Set(
+                    '%s in %s' % (_ot, _pools[_pool_id][0]),
+                    'objecttype_pool:%s:%s' % (_ot, _pools[_pool_id][1])
+                ))
+
+        return _sets
 
     def _get_spec(self, path_js, base_type):
         return ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), path_js)))
+
+    def _get_names(self, path_js, base_type, spec, language):
+        names = []
+        for i in range(len(path_js)):
+            if language in path_js[i][base_type][set_names[base_type]['objkey']]:
+                names.append(path_js[i][base_type][set_names[base_type]['objkey']][language])
+            else:
+                names.append(spec)
+        return names
 
 
 class ScrollInfo(object):
@@ -132,13 +208,13 @@ class ScrollInfo(object):
 
 class Set(object):
 
-    def __init__(self, name, spec):
+    def __init__(self, name, spec, description=None):
         self.name = name
         self.spec = spec
+        self.description = description
 
 
 set_types = [
-    'objecttype',
     'pool',
     'collection',
     'tagfilter'

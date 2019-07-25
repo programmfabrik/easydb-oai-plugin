@@ -167,6 +167,12 @@ class ListSets(Response):
             ResponseItem('setSpec', s.spec),
             ResponseItem('setName', s.name)
         ]
+        if isinstance (s.description, dict) and len(s.description) > 0:
+            desc = ResponseItem('setDescription')
+            desc.subitems = [
+                ResponseItem(key, str(s.description[key])) for key in s.description
+            ]
+            item.subitems.append(desc)
 
         return item
 
