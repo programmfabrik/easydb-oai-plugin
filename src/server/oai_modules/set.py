@@ -62,6 +62,16 @@ class SetManager(object):
     def _search_sets(self, base_type, pool_sets):
 
         query = {
+            'limit': 0,
+            'aggregations': {
+                '_pools': {
+                    'type': 'linked_object',
+                    'field': '_pool',
+                    'limit': 100000,
+                    'sort': 'term'
+                }
+            }
+        } if base_type == 'pool' else {
             'type': base_type,
             'generate_rights': False,
             'offset': 0,
@@ -78,12 +88,11 @@ class SetManager(object):
         sets = []
 
         if base_type == 'pool':
-            sets += self._search_pools_objecttypes(response['objects'], language)
+            sets += self._search_pools_objecttypes(response['aggregations']['_pools']['linked_objects'], language)
         else:
             for obj in response['objects']:
-                spec = self._get_spec(obj['_path'], base_type)
-                names = self._get_names(obj['_path'], base_type, spec, language)
-                set_name = " / ".join(names[1 if len(names) > 1 else 0:])
+                spec = ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), obj['_path'])))
+                set_name = " / ".join(list(map(lambda element: str(element[base_type][set_names[base_type]['objkey']][language]), obj['_path'])))
                 sets.append(Set(set_name, spec))
 
         return sets
@@ -95,12 +104,11 @@ class SetManager(object):
 
         # add non-empty pools to the set list
         for p in pools:
-            spec = self._get_spec(p['_path'], 'pool')
-            names = self._get_names(p['_path'], 'pool', spec, language)
-            set_name = " / ".join(names[1 if len(names) > 1 else 0:])
+            spec = 'pool:' + ':'.join(list(map(lambda element: str(element['_id']), p['_path'])))
+            set_name = " / ".join(list(map(lambda element: str(element['text']), p['_path'])))
             _sets.append(Set(set_name, spec))
 
-            _pool_id = get_json_value(p, 'pool._id')
+            _pool_id = get_json_value(p, '_id')
             if _pool_id is not None:
                 _pools[_pool_id] = [set_name, spec]
 
@@ -171,18 +179,6 @@ class SetManager(object):
 
         return _sets
 
-    def _get_spec(self, path_js, base_type):
-        return ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), path_js)))
-
-    def _get_names(self, path_js, base_type, spec, language):
-        names = []
-        for i in range(len(path_js)):
-            if language in path_js[i][base_type][set_names[base_type]['objkey']]:
-                names.append(path_js[i][base_type][set_names[base_type]['objkey']][language])
-            else:
-                names.append(spec)
-        return names
-
 
 class ScrollInfo(object):
 
@@ -222,11 +218,9 @@ set_types = [
 
 set_names = {
     'pool': {
-        'top': 'Pools',
         'objkey': 'name'
     },
     'collection': {
-        'top': 'Collections',
         'objkey': 'displayname'
     }
 }
