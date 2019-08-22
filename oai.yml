@@ -4,6 +4,48 @@ plugin:
   server:
     api-version:
       require: 1
+  webfrontend:
+    l10n: l10n/
 
 python-2:
   file: src/server/oai.py
+
+base_config:
+  - name: oai_pmh
+    group: oai_pmh
+    parameters:
+      enabled:
+        type: bool
+        default: false
+        position: 0
+      repository_name:
+        type: text
+        position: 1
+      admin_email:
+        type: email
+        position: 2
+      namespace_identifier:
+        type: text
+        position: 3
+      tagfilter_sets:
+        type: table
+        fields:
+          - name: set_name
+            type: text
+            position: 0
+          - name: tagfilter
+            type: tagfilter-select
+            position: 1
+        position: 4
+      include_eas_urls:
+        type: bool
+        default: false
+        position: 5
+      merge_linked_objects:
+        type: select
+        label: oai_pmh.merge_linked_objects
+        default: not_in_main_search
+        options:
+          - not_in_main_search
+          - none
+        position: 6

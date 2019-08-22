@@ -1,0 +1,19 @@
+key,de-DE,en-US,it-IT,es-ES
+server.config.name.system.oai_pmh,OAI/PMH,OAI/PMH,OAI/PMH,OAI/PMH
+server.config.group.system.oai_pmh.introduction,Einstellungen für die OAI/PMH Schnittstelle,Settings for the OAI/PMH API,Settings for the OAI/PMH API,Settings for the OAI/PMH API
+server.config.group.system.oai_pmh.title,OAI/PMH,OAI/PMH,OAI/PMH,OAI/PMH
+server.config.label.system.oai_pmh.merge_linked_objects,Verlinkte Datensätze einbetten,Embed linked objects,Embed linked objects,Embed linked objects
+server.config.option.system.oai_pmh.merge_linked_objects.none,Keine Datensätze,None,None,None
+server.config.option.system.oai_pmh.merge_linked_objects.not_in_main_search,Nicht in der Hauptsuche enthaltene Datensätze,Not included in main search,Not included in main search,Not included in main search
+server.config.parameter.system.oai_pmh.admin_email.label,Administrator-E-Mail,Administrator email,E-mail del administrador,Administrator e-mail
+server.config.parameter.system.oai_pmh.enabled.checkbox,Freigegeben,Enabled,Activado,Enabled
+server.config.parameter.system.oai_pmh.enabled.label,-,-,-,-
+server.config.parameter.system.oai_pmh.include_eas_urls.checkbox,EAS-URLs anzeigen,Show EAS URLs,mostrar URLs del EAS,show EAS URLs
+server.config.parameter.system.oai_pmh.include_eas_urls.label,-,-,-,-
+server.config.parameter.system.oai_pmh.namespace_identifier.label,Namespace,Namespace,Namespace,Namespace
+server.config.parameter.system.oai_pmh.repository_name.label,Repository-Name,Repository name,Nombre del repositorio,Repository name
+server.config.parameter.system.oai_pmh.set_name.label,Set Name,Set Name,Set Name,Set Name
+server.config.parameter.system.oai_pmh.tagfilter_sets.label,Tag-Sets,Tag-Sets,Tag-Sets,Tag-Sets
+server.config.parameter.system.oai_pmh.tagfilter_sets.set_name.label,Set Name,Set Name,Set Name,Set Name
+server.config.parameter.system.oai_pmh.tagfilter_sets.tagfilter.label,Tag-Filter,Tag filter,Tag-Filter,Tagfilter
+server.config.parameter.system.oai_pmh.tagfilter.label,Tag-Filter,Tag filter,Tagfilter,Tagfilter
