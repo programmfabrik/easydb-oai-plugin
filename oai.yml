@@ -12,7 +12,7 @@ python-2:
 
 base_config:
   - name: oai_pmh
-    group: oai_pmh
+    group: export
     parameters:
       enabled:
         type: bool
