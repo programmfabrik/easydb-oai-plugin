@@ -90,7 +90,9 @@ class Repository(object):
     def format_iso8601(self, dateobj):
         return dateobj.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    def parse_iso8601(self, datestring):
+    def parse_iso8601(self, datestring, short=False):
+        if short:
+            return datetime.datetime.strptime(datestring, '%Y-%m-%d')
         return datetime.datetime.strptime(datestring, '%Y-%m-%dT%H:%M:%SZ')
 
     def datatime_format_ok(self, datestring):
@@ -98,7 +100,13 @@ class Repository(object):
             self.parse_iso8601(datestring)
             return True
         except:
-            return False
+            try:
+                self.parse_iso8601(datestring, True)
+                return True
+            except:
+                pass
+
+        return False
 
 
 class MetadataFormat(object):
