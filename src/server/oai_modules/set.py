@@ -92,7 +92,10 @@ class SetManager(object):
         else:
             for obj in response['objects']:
                 spec = ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), obj['_path'])))
-                set_name = " / ".join(list(map(lambda element: str(element[base_type][set_names[base_type]['objkey']][language]), obj['_path'])))
+                try:
+                    set_name = " / ".join(list(map(lambda element: str(element[base_type][set_names[base_type]['objkey']][language]), obj['_path'])))
+                except:
+                    set_name = spec
                 sets.append(Set(set_name, spec))
 
         return sets
@@ -105,7 +108,10 @@ class SetManager(object):
         # add non-empty pools to the set list
         for p in pools:
             spec = 'pool:' + ':'.join(list(map(lambda element: str(element['_id']), p['_path'])))
-            set_name = " / ".join(list(map(lambda element: str(element['text']), p['_path'])))
+            try:
+                set_name = " / ".join(list(map(lambda element: str(element['text']), p['_path'])))
+            except:
+                set_name = spec
             _sets.append(Set(set_name, spec))
 
             _pool_id = get_json_value(p, '_id')
