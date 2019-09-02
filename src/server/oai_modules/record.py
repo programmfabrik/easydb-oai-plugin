@@ -32,7 +32,7 @@ class RecordManager(object):
             ]
         }
         response = self.repository.easydb_context.search(
-            'user', 'oai_pmh', query, self.repository.include_eas_urls)
+            'user', self.repository.username, query, self.repository.include_eas_urls)
         if (len(response['objects']) == 0):
             return None
 
@@ -142,7 +142,7 @@ class RecordManager(object):
             'format': 'long',
             'search': search_elements
         }
-        response = self.repository.easydb_context.search('user', 'oai_pmh', query)
+        response = self.repository.easydb_context.search('user', self.repository.username, query)
         user_id = response['_user_id']
         language = response['language']
 

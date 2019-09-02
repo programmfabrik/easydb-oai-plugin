@@ -82,25 +82,24 @@ class SetManager(object):
             ]
         }
 
-        response = self.repository.easydb_context.search(
-            'user', 'oai_pmh', query)
-        language = response['language']
+        response = self.repository.easydb_context.search('user', self.repository.username, query)
+
         sets = []
 
         if base_type == 'pool':
-            sets += self._search_pools_objecttypes(response['aggregations']['_pools']['linked_objects'], language)
+            sets += self._search_pools_objecttypes(response['aggregations']['_pools']['linked_objects'])
         else:
             for obj in response['objects']:
                 spec = ':'.join([base_type] + list(map(lambda element: str(element[base_type]['_id']), obj['_path'])))
                 try:
-                    set_name = " / ".join(list(map(lambda element: str(element[base_type][set_names[base_type]['objkey']][language]), obj['_path'])))
+                    set_name = " / ".join(list(map(lambda element: str(element[base_type][set_names[base_type]['objkey']][self.repository.language]), obj['_path'])))
                 except:
                     set_name = spec
                 sets.append(Set(set_name, spec))
 
         return sets
 
-    def _search_pools_objecttypes(self, pools, language):
+    def _search_pools_objecttypes(self, pools):
         _sets = []
         _pools = {}
         not_empty_objecttypes_with_pools = []
@@ -131,7 +130,7 @@ class SetManager(object):
             },
             'generate_rights': False
         }
-        response = self.repository.easydb_context.search('user', 'oai_pmh', query)
+        response = self.repository.easydb_context.search('user', self.repository.username, query)
 
         _terms = get_json_value(response, 'aggregations._objecttype.terms')
         if _terms is None:
@@ -164,7 +163,7 @@ class SetManager(object):
                 'sort': 'term',
                 'limit': 1000000
             }
-        response = self.repository.easydb_context.search('user', 'oai_pmh', query)
+        response = self.repository.easydb_context.search('user', self.repository.username, query)
 
         for _ot in not_empty_objecttypes_with_pools:
             _terms = get_json_value(response, 'aggregations.%s.terms' % _ot)

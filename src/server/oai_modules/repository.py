@@ -27,6 +27,13 @@ class Repository(object):
                 tagfilter = tagfilter_set_js['tagfilter']
                 self.tagfilter_set_names.append(set_name)
                 self.tagfilter_sets[set_name] = tagfilter
+        self.username = 'oai_pmh'
+        try:
+            db_cursor = easydb_context.get_db_cursor()
+            db_cursor.execute("""SELECT frontend_language FROM ez_user WHERE login = '{0}'""".format(self.username))
+            self.language = db_cursor.fetchone()['frontend_language']
+        except:
+            self.language = ''
 
     def process_request(self, parameters):
         try:
