@@ -68,6 +68,10 @@ def oai(easydb_context, parameters):
     merge_linked_objects = context.get_json_value(
         base_config, 'oai_pmh.merge_linked_objects')
 
+    records_limit = context.get_json_value(base_config, 'oai_pmh.records_limit')
+    if records_limit is None or not isinstance(records_limit, int) or records_limit < 1 or records_limit > 1000:
+        records_limit = 100
+
     # process
     repository = oai_modules.repository.Repository(
         easydb_context,
@@ -78,7 +82,8 @@ def oai(easydb_context, parameters):
         metadata_formats,
         tagfilter_sets_js,
         include_eas_urls,
-        merge_linked_objects)
+        merge_linked_objects,
+        records_limit)
 
     response = repository.process_request(
         parameters['query_string_parameters'])

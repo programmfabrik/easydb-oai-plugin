@@ -10,7 +10,7 @@ class SetManager(object):
         self.repository = repository
         self.objecttypes_with_pools = []
 
-    def get_sets(self, resumption_token, limit):
+    def get_sets(self, resumption_token, limit=100):
         if limit < 1:
             return ([], None)
 

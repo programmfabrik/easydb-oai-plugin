@@ -10,7 +10,7 @@ import datetime
 
 
 class Repository(object):
-    def __init__(self, easydb_context, base_url, name, namespace_identifier, admin_email, metadata_formats, tagfilter_sets_js, include_eas_urls, merge_linked_objects):
+    def __init__(self, easydb_context, base_url, name, namespace_identifier, admin_email, metadata_formats, tagfilter_sets_js, include_eas_urls, merge_linked_objects, records_limit):
         self.easydb_context = easydb_context
         self.base_url = base_url
         self.name = name
@@ -21,6 +21,7 @@ class Repository(object):
         self.tagfilter_set_names = []
         self.tagfilter_sets = {}
         self.merge_linked_objects = merge_linked_objects
+        self.records_limit = records_limit
         if tagfilter_sets_js is not None:
             for tagfilter_set_js in tagfilter_sets_js:
                 set_name = tagfilter_set_js['set_name']
@@ -85,14 +86,14 @@ class Repository(object):
         ]
         return out_of_the_box + self.metadata_formats
 
-    def get_sets(self, resumption_token, limit=100):
-        return oai_modules.set.SetManager(self).get_sets(resumption_token, limit)
+    def get_sets(self, resumption_token):
+        return oai_modules.set.SetManager(self).get_sets(resumption_token)
 
     def get_record(self, uuid, metadata_format):
         return oai_modules.record.RecordManager(self).get_record(uuid, metadata_format)
 
-    def get_records(self, metadata_format, only_headers, resumption_token, range_from, range_until, set_type, set_id, limit=100):
-        return oai_modules.record.RecordManager(self).get_records(metadata_format, only_headers, resumption_token, range_from, range_until, set_type, set_id, limit)
+    def get_records(self, metadata_format, only_headers, resumption_token, range_from, range_until, set_type, set_id):
+        return oai_modules.record.RecordManager(self).get_records(metadata_format, only_headers, resumption_token, range_from, range_until, set_type, set_id, self.records_limit)
 
     def format_iso8601(self, dateobj):
         return dateobj.strftime('%Y-%m-%dT%H:%M:%SZ')

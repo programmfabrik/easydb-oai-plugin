@@ -27,6 +27,12 @@ base_config:
       namespace_identifier:
         type: text
         position: 3
+      records_limit:
+        type: int
+        min: 1
+        max: 1000
+        default: 100
+        position: 4
       tagfilter_sets:
         type: table
         fields:
@@ -36,11 +42,11 @@ base_config:
           - name: tagfilter
             type: tagfilter-select
             position: 1
-        position: 4
+        position: 5
       include_eas_urls:
         type: bool
         default: false
-        position: 5
+        position: 6
       merge_linked_objects:
         type: select
         label: oai_pmh.merge_linked_objects
@@ -48,4 +54,4 @@ base_config:
         options:
           - not_in_main_search
           - none
-        position: 6
+        position: 7

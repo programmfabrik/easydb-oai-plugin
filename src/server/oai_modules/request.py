@@ -171,7 +171,7 @@ class ListRecords(Request):
 
     def process(self):
         result = self.repository.get_records(self.metadata_format, False, self.resumption_token,
-                                             self.from_filter, self.until_filter, self.set_type, self.set_id, limit=5)
+                                             self.from_filter, self.until_filter, self.set_type, self.set_id)
         if result is None:
             return oai_modules.response.Error(self, 'badResumptionToken')
         elif isinstance(result, oai_modules.response.Error):
