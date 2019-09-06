@@ -12,7 +12,7 @@ server.config.parameter.system.oai_pmh.include_eas_urls.checkbox,EAS-URLs anzeig
 server.config.parameter.system.oai_pmh.include_eas_urls.label,-,-,-,-
 server.config.parameter.system.oai_pmh.namespace_identifier.label,Namespace,Namespace,Namespace,Namespace
 server.config.parameter.system.oai_pmh.records_limit.label,Maximale Anzahl an Objekten bei ListRecords,Maximum number of records for ListRecords,Maximum number of records for ListRecords,Maximum number of records for ListRecords
-server.config.parameter.system.oai_pmh.records_limit.label|hint,"Min.: 1, Max.: 1000","Min.: 1, Max.: 1000","Min.: 1, Max.: 1000","Min.: 1, Max.: 1000"
+server.config.parameter.system.oai_pmh.records_limit.label|hint,1-1000,1-1000,1-1000,1-1000
 server.config.parameter.system.oai_pmh.repository_name.label,Repository-Name,Repository name,Nombre del repositorio,Repository name
 server.config.parameter.system.oai_pmh.set_name.label,Set Name,Set Name,Set Name,Set Name
 server.config.parameter.system.oai_pmh.tagfilter_sets.label,Tag-Sets,Tag-Sets,Tag-Sets,Tag-Sets
