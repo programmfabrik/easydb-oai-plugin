@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import context
+import json
 import oai_modules.util
 import xml.etree.ElementTree as ET
 
@@ -40,7 +41,7 @@ class RecordManager(object):
         language = response['language']
         metadata_info = MetadataInfo(user_id, language, metadata_format)
 
-        return self._parse_record(response['objects'][0], metadata_info)
+        return self._parse_records(response['objects'], metadata_info)[0]
 
     def get_records(self, metadata_format, only_headers, resumption_token, range_from, range_until, set_type, set_id, limit=100):
 
@@ -151,8 +152,7 @@ class RecordManager(object):
         else:
             metadata_info = MetadataInfo(user_id, language, metadata_format)
 
-        records = [self._parse_record(object_js, metadata_info)
-                   for object_js in response['objects']]
+        records = self._parse_records(response['objects'], metadata_info)
 
         if response['count'] > scroll_info.offset + limit:
             scroll_info.offset += limit
@@ -162,49 +162,58 @@ class RecordManager(object):
 
         return (records, new_resumption_token, metadata_format)
 
-    def _parse_record(self, object_js, metadata_info=None):
-        try:
-            uuid = context.get_json_value(object_js, '_uuid', True)
-            record = Record(self.repository, uuid)
-            sets = set()
+    def _parse_records(self, object_js, metadata_info=None):
+        records = []
 
-            for _set in self._get_tagfilter_sets_for_object(context.get_json_value(object_js, '_tags')):
-                sets.add(_set)
+        if metadata_info:
+            export_result = self.repository.easydb_context.export_objects_as_xml(
+                object_js,
+                metadata_info.mdformat.ftype,
+                metadata_info.mdformat.prefix,
+                metadata_info.user_id,
+                metadata_info.language,
+                self.repository.merge_linked_objects)
+            xmldocs = context.get_json_value(export_result, 'documents', True)
 
-            if '_objecttype' in object_js:
-                objecttype = object_js['_objecttype']
-                sets.add('objecttype:' + objecttype)
-                pool = context.get_json_value(object_js, objecttype + "._pool")
+        idx = 0
+        for obj in object_js:
+            try:
+                uuid = context.get_json_value(obj, '_uuid', True)
+                record = Record(self.repository, uuid)
+                sets = set()
 
-                if pool is not None:
-                    pool_path = [str(context.get_json_value(p, "pool._id", True)) for p in pool['_path']]
+                for _set in self._get_tagfilter_sets_for_object(context.get_json_value(obj, '_tags')):
+                    sets.add(_set)
 
-                    if len(pool_path) > 0:
-                        pool_set_spec = 'pool:' + ':'.join(pool_path)
-                        sets.add(pool_set_spec)
-                        sets.add('objecttype_pool:{}:{}'.format(objecttype, pool_set_spec))
+                if '_objecttype' in obj:
+                    objecttype = obj['_objecttype']
+                    sets.add('objecttype:' + objecttype)
+                    pool = context.get_json_value(obj, objecttype + "._pool")
 
-            if sets is not None:
-                record.set_specs = sets
-            record.last_modified = context.get_json_value(
-                object_js, '_last_modified')
+                    if pool is not None:
+                        pool_path = [str(context.get_json_value(
+                            p, "pool._id", True)) for p in pool['_path']]
 
-            if record.last_modified is None:
-                record.last_modified = self.repository.get_earliest_datestamp()
-            else:
-                record.last_modified = oai_modules.util.to_iso_utc_timestring(
-                    record.last_modified)
+                        if len(pool_path) > 0:
+                            pool_set_spec = 'pool:' + ':'.join(pool_path)
+                            sets.add(pool_set_spec)
+                            sets.add('objecttype_pool:{}:{}'.format(
+                                objecttype, pool_set_spec))
 
-            if metadata_info:
-                export_result = self.repository.easydb_context.export_object_as_xml(
-                    object_js,
-                    metadata_info.mdformat.ftype,
-                    metadata_info.mdformat.prefix,
-                    metadata_info.user_id,
-                    metadata_info.language,
-                    self.repository.merge_linked_objects)
-                xml_string = context.get_json_value(
-                    export_result, 'document', True).encode('utf-8')
+                if sets is not None:
+                    record.set_specs = sets
+                record.last_modified = context.get_json_value(
+                    obj, '_last_modified')
+
+                if record.last_modified is None:
+                    record.last_modified = self.repository.get_earliest_datestamp()
+                else:
+                    record.last_modified = oai_modules.util.to_iso_utc_timestring(
+                        record.last_modified)
+
+                xml_string = ''
+                if idx < len(xmldocs):
+                    xml_string = xmldocs[idx].encode('utf-8')
 
                 if len(xml_string) == 0:
                     xml_string = default_dc_response.format(
@@ -212,15 +221,19 @@ class RecordManager(object):
 
                 record.metadata = ET.fromstring(xml_string)
 
-            return record
+                records.append(record)
 
-        except ET.ParseError as pe:
-            raise oai_modules.util.InternalError(
-                'could not format oai metadata: could not parse xml record: {}'.format(pe.message))
+            except ET.ParseError as pe:
+                raise oai_modules.util.InternalError(
+                    'could not format oai metadata: could not parse xml record: {}'.format(pe.message))
 
-        except Exception as e:
-            raise oai_modules.util.InternalError(
-                'could not parse record: {}'.format(e.message))
+            except Exception as e:
+                raise oai_modules.util.InternalError(
+                    'could not parse record: {}'.format(e.message))
+
+            idx += 1
+
+        return records
 
     def _get_tagfilter_sets_for_object(self, tags_js):
         if tags_js is None:
