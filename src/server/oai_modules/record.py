@@ -164,6 +164,7 @@ class RecordManager(object):
 
     def _parse_records(self, object_js, metadata_info=None):
         records = []
+        xmldocs = []
 
         if metadata_info:
             export_result = self.repository.easydb_context.export_objects_as_xml(
@@ -211,15 +212,16 @@ class RecordManager(object):
                     record.last_modified = oai_modules.util.to_iso_utc_timestring(
                         record.last_modified)
 
-                xml_string = ''
-                if idx < len(xmldocs):
-                    xml_string = xmldocs[idx].encode('utf-8')
+                if metadata_info:
+                    xml_string = ''
+                    if idx < len(xmldocs):
+                        xml_string = xmldocs[idx].encode('utf-8')
 
-                if len(xml_string) == 0:
-                    xml_string = default_dc_response.format(
-                        context.get_json_value(object_js, '_system_object_id', False))
+                    if len(xml_string) == 0 and not metadata_info:
+                        xml_string = default_dc_response.format(
+                            context.get_json_value(object_js, '_system_object_id', False))
 
-                record.metadata = ET.fromstring(xml_string)
+                    record.metadata = ET.fromstring(xml_string)
 
                 records.append(record)
 
