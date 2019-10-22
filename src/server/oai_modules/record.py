@@ -168,12 +168,13 @@ class RecordManager(object):
 
         if metadata_info:
             export_result = self.repository.easydb_context.export_objects_as_xml(
-                object_js,
+                object_js[0],
                 metadata_info.mdformat.ftype,
                 metadata_info.mdformat.prefix,
                 metadata_info.user_id,
                 metadata_info.language,
-                self.repository.merge_linked_objects)
+                self.repository.merge_linked_objects,
+                self.repository.merge_max_depth)
             xmldocs = context.get_json_value(export_result, 'documents', True)
 
         idx = 0

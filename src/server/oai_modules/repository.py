@@ -10,7 +10,7 @@ import datetime
 
 
 class Repository(object):
-    def __init__(self, easydb_context, base_url, name, namespace_identifier, admin_email, metadata_formats, tagfilter_sets_js, include_eas_urls, merge_linked_objects, records_limit):
+    def __init__(self, easydb_context, base_url, name, namespace_identifier, admin_email, metadata_formats, tagfilter_sets_js, include_eas_urls, merge_linked_objects, merge_max_depth, records_limit):
         self.easydb_context = easydb_context
         self.base_url = base_url
         self.name = name
@@ -21,6 +21,7 @@ class Repository(object):
         self.tagfilter_set_names = []
         self.tagfilter_sets = {}
         self.merge_linked_objects = merge_linked_objects
+        self.merge_max_depth = merge_max_depth
         self.records_limit = records_limit
         if tagfilter_sets_js is not None:
             for tagfilter_set_js in tagfilter_sets_js:

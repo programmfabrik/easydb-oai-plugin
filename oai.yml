@@ -55,3 +55,10 @@ base_config:
           - not_in_main_search
           - none
         position: 7
+      merge_max_depth:
+        type: int
+        label: oai_pmh.merge_max_depth
+        min: 1
+        max: 9
+        default: 1
+        position: 8
