@@ -168,7 +168,7 @@ class RecordManager(object):
 
         if metadata_info:
             export_result = self.repository.easydb_context.export_objects_as_xml(
-                object_js[0],
+                object_js,
                 metadata_info.mdformat.ftype,
                 metadata_info.mdformat.prefix,
                 metadata_info.user_id,
