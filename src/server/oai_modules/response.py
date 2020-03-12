@@ -27,7 +27,7 @@ class Response(object):
         request = ET.SubElement(oaipmh, 'request')
         request.text = self.request.repository.base_url
         if self.error_code is not None:
-            error = ET.SubElement(oaipmh, 'error', {'code': self.error_code})
+            error = ET.SubElement(oaipmh, 'error', {'code': str(self.error_code)})
             if self.error_message is not None:
                 error.text = self.error_message
         else:

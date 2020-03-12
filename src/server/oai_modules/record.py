@@ -218,9 +218,8 @@ class RecordManager(object):
                     if idx < len(xmldocs):
                         xml_string = xmldocs[idx].encode('utf-8')
 
-                    if len(xml_string) == 0 and not metadata_info:
-                        xml_string = default_dc_response.format(
-                            context.get_json_value(object_js, '_system_object_id', False))
+                    if len(xml_string) == 0:
+                        xml_string = default_dc_response
 
                     record.metadata = ET.fromstring(xml_string)
 
@@ -353,7 +352,7 @@ where i.":op" = 'INSERT' and i."uuid:668" = '{}'
 
 default_dc_response = u"""<?xml version="1.0"?>
 <oai_dc:dc xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title/>
+    <dc:title>NO OAI-DC PROFILE CONFIGURED</dc:title>
     <dc:creator/>
     <dc:subject/>
     <dc:description/>
@@ -362,7 +361,7 @@ default_dc_response = u"""<?xml version="1.0"?>
     <dc:date/>
     <dc:type/>
     <dc:format/>
-    <dc:identifier>{}</dc:identifier>
+    <dc:identifier/>
     <dc:source/>
     <dc:language/>
     <dc:relation/>
