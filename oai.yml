@@ -52,6 +52,7 @@ base_config:
         label: oai_pmh.merge_linked_objects
         default: not_in_main_search
         options:
+          - all
           - not_in_main_search
           - none
         position: 7
