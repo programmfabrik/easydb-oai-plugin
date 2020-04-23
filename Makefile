@@ -15,7 +15,7 @@ L10N2JSON = python ../../library/tools/l10n2json.py
 
 all: build
 
-include ../../library/tools/base-plugins.make
+include ../easydb-library/tools/base-plugins.make
 
 build: code
 
