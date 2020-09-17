@@ -11,7 +11,7 @@ INSTALL_FILES = \
 L10N_FILES = l10n/oai.csv
 L10N_GOOGLE_KEY = 1glXObMmIUd0uXxdFdiPWRZPLCx6qEUaxDfNnmttave4
 L10N_GOOGLE_GID = 425602350
-L10N2JSON = python ../../library/tools/l10n2json.py
+L10N2JSON = python2 ../../library/tools/l10n2json.py
 
 all: build
 
