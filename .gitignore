@@ -4,6 +4,7 @@
 *.swp
 *.pyc
 build
+build-info.json
 build-stamp-*
 *~
 .idea
