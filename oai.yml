@@ -1,5 +1,5 @@
 plugin:
-  name: oai
+  name: easydb-oai-plugin
   version: 1.0
   server:
     api-version:
