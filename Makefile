@@ -1,4 +1,6 @@
 PLUGIN_NAME = oai
+PLUGIN_PATH = easydb-oai-plugin
+
 INSTALL_FILES = \
 	$(WEB)/l10n/cultures.json \
 	$(WEB)/l10n/de-DE.json \
