@@ -8,7 +8,7 @@ INSTALL_FILES = \
 	$(WEB)/l10n/es-ES.json \
 	$(WEB)/l10n/it-IT.json \
 	src/server \
-	oai.yml
+	manifest.yml
 
 L10N_FILES = l10n/oai.csv
 L10N_GOOGLE_KEY = 1glXObMmIUd0uXxdFdiPWRZPLCx6qEUaxDfNnmttave4
