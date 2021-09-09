@@ -3,7 +3,7 @@
 import context
 import json
 import oai_modules.util
-import xml.etree.ElementTree as ET
+import lxml.etree as ET
 
 
 class RecordManager(object):

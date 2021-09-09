@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import xml.etree.ElementTree as ET
-import xml.dom.minidom
+import lxml.etree as ET
 import datetime
 
 
@@ -12,15 +11,25 @@ class Response(object):
 
     def __str__(self):
         schemaLocations = [
-            'http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd']
+            oaipmh_attributes['xmlns'] + ' ' + oaipmh_attributes['xmlns:xsd']
+        ]
+        namespaces = {
+            None: oaipmh_attributes['xmlns']
+        }
         for namespace in self.get_response_namespaces():
             schema_def = namespace.url + ' ' + namespace.schema
             if schema_def not in schemaLocations:
                 schemaLocations.append(schema_def)
-            ET.register_namespace(namespace.prefix, namespace.url)
+            namespaces[namespace.prefix] = namespace.url
 
-        oaipmh_attributes['xsi:schemaLocation'] = ' '.join(schemaLocations)
-        oaipmh = ET.Element('OAI-PMH', oaipmh_attributes)
+        attr_schemaLocation = ET.QName(oaipmh_attributes['xmlns:xsi'], 'schemaLocation')
+
+        oaipmh = ET.Element(
+            'OAI-PMH',
+            nsmap=namespaces,
+            attrib={
+                attr_schemaLocation: ' '.join(schemaLocations)
+            })
 
         responseDate = ET.SubElement(oaipmh, 'responseDate')
         responseDate.text = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -31,7 +40,6 @@ class Response(object):
             if self.error_message is not None:
                 error.text = self.error_message
         else:
-            request.attrib = {}
             for name, values in self.request.parameters.items():
                 if len(values) > 0:
                     request.attrib[name] = values[0]
@@ -96,7 +104,7 @@ class Response(object):
 
         fixup_xmlns(oaipmh)
 
-        return xml.dom.minidom.parseString(ET.tostring(oaipmh, 'UTF-8')).toprettyxml(indent='\t', encoding='UTF-8')
+        return ET.tostring(oaipmh, xml_declaration=True, pretty_print=True, encoding='UTF-8')
 
     def get_response_items(self):
         return []
@@ -232,7 +240,8 @@ class ResponseItem(object):
 
     def add_sub_element(self, element):
         se = ET.SubElement(element, self.name)
-        se.attrib = self.attrib
+        for a in self.attrib:
+            se.attrib[a] = self.attrib[a]
         if self.text is not None:
             se.text = self.text
         for subitem in self.subitems:
@@ -250,5 +259,6 @@ class ResponseNamespace(object):
 
 oaipmh_attributes = {
     'xmlns': 'http://www.openarchives.org/OAI/2.0/',
+    'xmlns:xsd': 'http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd',
     'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
 }
