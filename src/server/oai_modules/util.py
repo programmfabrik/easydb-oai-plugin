@@ -68,11 +68,11 @@ class ParseError(Exception):
 
 
 def tokenize(info_js):
-    return base64.b64encode(json.dumps(info_js, separators=(',', ':')))
+    return base64.b64encode(json.dumps(info_js, separators=(',', ':'))).decode('utf-8')
 
 
 def untokenize(token):
-    return json.loads(base64.b64decode(token))
+    return json.loads(base64.b64decode(token).decode('utf-8'))
 
 
 def to_iso_utc_timestring(timestring):

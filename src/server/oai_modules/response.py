@@ -104,7 +104,7 @@ class Response(object):
 
         fixup_xmlns(oaipmh)
 
-        return ET.tostring(oaipmh, xml_declaration=True, pretty_print=True, encoding='UTF-8')
+        return ET.tostring(oaipmh, xml_declaration=True, pretty_print=True, encoding='UTF-8').decode('utf-8')
 
     def get_response_items(self):
         return []
