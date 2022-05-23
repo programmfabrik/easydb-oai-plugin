@@ -53,6 +53,7 @@ base_config:
         default: not_in_main_search
         options:
           - all
+          - not_in_main_search_and_reverse
           - not_in_main_search
           - none
         position: 7
