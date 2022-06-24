@@ -205,8 +205,6 @@ class ScrollInfo(object):
         except Exception:
             raise oai_modules.util.ParseError('badResumptionToken')
 
-        return None
-
 class Set(object):
 
     def __init__(self, name, spec, description=None):

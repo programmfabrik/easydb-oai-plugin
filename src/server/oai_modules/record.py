@@ -227,11 +227,11 @@ class RecordManager(object):
 
             except ET.ParseError as pe:
                 raise oai_modules.util.InternalError(
-                    'could not format oai metadata: could not parse xml record: {}'.format(pe.message))
+                    'could not format oai metadata: could not parse xml record: {}'.format(str(pe)))
 
             except Exception as e:
                 raise oai_modules.util.InternalError(
-                    'could not parse record: {}'.format(e.message))
+                    'could not parse record: {}'.format(str(e)))
 
             idx += 1
 
@@ -321,9 +321,6 @@ class ScrollInfo(object):
             return ScrollInfo(info['f'], info['u'], info['t'], info['i'], info['o'], info['m'])
         except Exception:
             raise oai_modules.util.ParseError('badResumptionToken')
-
-        return None
-
 
 class Record(object):
     def __init__(self, repository, uuid):

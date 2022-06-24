@@ -46,9 +46,9 @@ class Repository(object):
             return oai_modules.response.Error(request, pe.error_code, pe.error_message)
         except oai_modules.util.InternalError as ie:
             request = oai_modules.request.Request(self)
-            return oai_modules.response.Error(request, 500, ie.message)
+            return oai_modules.response.Error(request, 500, str(ie))
         except Exception as e:
-            return oai_modules.response.Error(request, 500, e.message)
+            return oai_modules.response.Error(request, 500, str(e))
 
     def get_earliest_datestamp(self):
         db_cursor = self.easydb_context.get_db_cursor()

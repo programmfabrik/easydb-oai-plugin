@@ -2,11 +2,9 @@
 
 import sys
 import traceback
-import re
 import json
 import base64
 from context import EasydbException, EasydbError
-import datetime
 import dateutil.parser
 
 
@@ -15,7 +13,7 @@ def handle_exceptions(func):
         try:
             return func(*args, **kwargs)
         except InternalError as e:
-            return http_text_response(e.message, 500)
+            return http_text_response(str(e), 500)
         except EasydbException as e:
             return http_text_response('internal error: {}'.format(e), 500)
         except EasydbError as e:
@@ -60,6 +58,9 @@ class InternalError(Exception):
     def __init__(self, message):
         self.message = message
 
+    def __str__(self) -> str:
+        return self.message
+
 
 class ParseError(Exception):
     def __init__(self, error_code, error_message=None):
@@ -68,7 +69,7 @@ class ParseError(Exception):
 
 
 def tokenize(info_js):
-    return base64.b64encode(json.dumps(info_js, separators=(',', ':'))).decode('utf-8')
+    return base64.b64encode(json.dumps(info_js, separators=(',', ':')).encode()).decode('utf-8')
 
 
 def untokenize(token):
