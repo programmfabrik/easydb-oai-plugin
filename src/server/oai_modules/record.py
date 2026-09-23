@@ -143,7 +143,12 @@ class RecordManager(object):
             'format': 'long',
             'search': search_elements
         }
-        response = self.repository.easydb_context.search('user', self.repository.username, query)
+        response = self.repository.easydb_context.search(
+            'user',
+            self.repository.username,
+            query,
+            self.repository.include_eas_urls,
+        )
         user_id = response['_user_id']
         language = response['language']
 
